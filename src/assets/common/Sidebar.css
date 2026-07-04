@@ -1,0 +1,212 @@
+/* src/assets/common/Sidebar.css */
+
+/* 1. CSS Variables for easy color/sizing changes */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #eaeaea;
+  --text-main: #333333;
+  --text-muted: #888888;
+  --hover-bg: #f4f4f5;
+  --active-bg: #e0e7ff; /* A subtle indigo for the active tab */
+  --active-text: #4338ca;
+  --transition-speed: 0.3s;
+}
+
+/* 2. Main Sidebar Container */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--transition-speed) ease;
+  position: relative; /* Needed for the floating toggle button */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* 3. The Floating Toggle Button */
+.toggle-btn {
+  position: absolute;
+  top: 25px;
+  right: -15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 1px solid var(--sidebar-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-main);
+}
+
+/* 4. Header & User Info */
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid var(--sidebar-border);
+  min-height: 80px;
+}
+/* Add to your Sidebar.css */
+@media (max-width: 480px) {
+  .sidebar.collapsed {
+    width: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--active-text);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.username {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.user-role {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* 5. Navigation Area */
+.sidebar-body {
+  flex: 1; /* Pushes the footer to the bottom */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 10px;
+}
+
+/* Custom subtle scrollbar */
+.sidebar-body::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-body::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+.sidebar-group {
+  margin-bottom: 25px;
+}
+
+.group-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin: 0 0 10px 15px;
+  white-space: nowrap;
+}
+
+/* 6. Navigation Links */
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  text-decoration: none;
+  color: var(--text-main);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Active Page Highlight */
+.nav-link.active {
+  background-color: var(--active-bg);
+  color: var(--active-text);
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  min-width: 30px; /* Keeps icons perfectly aligned vertically */
+  display: flex;
+  justify-content: center;
+}
+
+.nav-text {
+  margin-left: 10px;
+}
+
+/* 7. Footer & Logout */
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background: none;
+  border: none;
+  color: #dc3545; /* Professional alert red */
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background-color: #fee2e2;
+}
+
+/* 8. Collapsed State Overrides */
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.sidebar.collapsed .nav-link,
+.sidebar.collapsed .logout-btn {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .nav-icon {
+  margin: 0; /* Removes margin when text is hidden to center the icon */
+}

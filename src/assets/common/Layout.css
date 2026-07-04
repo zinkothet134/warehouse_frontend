@@ -1,0 +1,13 @@
+/* src/assets/common/Layout.css */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* A very light grey for the dashboard background */
+}
+
+.main-content {
+  flex: 1; /* This forces the main content to take up all remaining horizontal space */
+  padding: 30px;
+  overflow-y: auto; /* Allows the main page to scroll independently of the sidebar */
+  height: 100vh;
+}
