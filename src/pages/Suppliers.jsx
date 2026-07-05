@@ -49,8 +49,7 @@ export default function Suppliers() {
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-
-      const token = localStorage.getItem("access");
+      setError(null);
 
       const response = await api.get("purchasing/suppliers/", {
         params: {
@@ -59,19 +58,21 @@ export default function Suppliers() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to load suppliers");
-      }
+      const data = await response.data;
 
-      const data = await response.json();
-
-      setSuppliers(data.results || []);
+      setSuppliers(data.results || data || []);
       setTotalSuppliers(data.count || 0);
 
       setHasNext(Boolean(data.next));
       setHasPrev(Boolean(data.previous));
     } catch (err) {
-      setError(err.message);
+      console.error("Failed to fetch suppliers:", err);
+
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        "Unable to load suppliers.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -93,11 +94,11 @@ export default function Suppliers() {
   const handleEditSuccess = (updatedSupplier) => {
     // 1. Close the modal immediately so the user can see the table
     setEditSupplier(null);
-    if (updatedSupplier && updatedSupplier.id) {
+    if (updatedSupplier?.id) {
       setSuppliers((prevSuppliers) =>
-        prevSuppliers.map((s) => s.id === updatedSupplier.id)
-          ? updatedSupplier
-          : s,
+        prevSuppliers.map((supplier) =>
+          supplier.id === updatedSupplier.id ? updatedSupplier : supplier,
+        ),
       );
     } else {
       fetchSuppliers();
