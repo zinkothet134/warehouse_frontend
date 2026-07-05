@@ -478,9 +478,10 @@ const styles = {
   actionButton: {
     width: "38px",
     height: "38px",
-    borderRadius: "10px",
-    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    border: "1px solid #cbd5e1",
     background: "#f8fafc",
+    color: "#334155",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
