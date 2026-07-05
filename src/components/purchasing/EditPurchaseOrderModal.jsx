@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   CalendarDays,
   PackagePlus,
@@ -49,6 +49,16 @@ export default function EditPurchaseOrderModal({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const orderDateRef = useRef(null);
+  const deliveryDateRef = useRef(null);
+  const openDatePicker = (inputRef) => {
+    if (inputRef.current?.showPicker) {
+      inputRef.current.showPicker();
+    } else {
+      inputRef.current?.focus();
+    }
+  };
 
   useEffect(() => {
     if (!order) return;
@@ -304,9 +314,17 @@ export default function EditPurchaseOrderModal({
               <span style={styles.label}>Order Date</span>
 
               <div style={styles.inputWithIcon}>
-                <CalendarDays size={16} color="#64748b" />
+                <button
+                  type="button"
+                  onClick={() => openDatePicker(orderDateRef)}
+                  style={styles.calendarButton}
+                  aria-label="Choose order date"
+                >
+                  <CalendarDays size={16} color="#64748b" />
+                </button>
 
                 <input
+                  ref={orderDateRef}
                   type="date"
                   value={formData.order_date}
                   onChange={(event) =>
@@ -322,9 +340,17 @@ export default function EditPurchaseOrderModal({
               <span style={styles.label}>Expected Delivery</span>
 
               <div style={styles.inputWithIcon}>
-                <CalendarDays size={16} color="#64748b" />
+                <button
+                  type="button"
+                  onClick={() => openDatePicker(deliveryDateRef)}
+                  style={styles.calendarButton}
+                  aria-label="Choose expected delivery date"
+                >
+                  <CalendarDays size={16} color="#64748b" />
+                </button>
 
                 <input
+                  ref={deliveryDateRef}
                   type="date"
                   value={formData.expected_delivery_date}
                   onChange={(event) =>
@@ -636,6 +662,15 @@ const styles = {
     border: "1px solid #cbd5e1",
     borderRadius: "11px",
     background: "#ffffff",
+  },
+  calendarButton: {
+    border: "none",
+    background: "transparent",
+    padding: "4px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   dateInput: {

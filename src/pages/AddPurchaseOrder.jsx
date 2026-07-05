@@ -353,6 +353,7 @@ const styles = {
     borderRadius: "8px",
     fontWeight: "600",
     cursor: "pointer",
+    color: "#F2F2F2",
   },
   submitBtn: {
     display: "flex",

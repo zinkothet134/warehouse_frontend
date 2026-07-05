@@ -1016,7 +1016,7 @@ const styles = {
     padding: "11px 12px",
     border: "1px solid #cbd5e1",
     borderRadius: "8px",
-    color: "#0f172a",
+    color: "#fff",
     fontSize: "14px",
     outline: "none",
   },
