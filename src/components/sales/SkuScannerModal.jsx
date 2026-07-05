@@ -649,7 +649,7 @@ const styles = {
     boxSizing: "border-box",
     border: "1px solid #cbd5e1",
     borderRadius: "10px",
-    color: "#0f172a",
+    color: "#f2f5f3",
     fontWeight: "800",
     textAlign: "center",
   },
