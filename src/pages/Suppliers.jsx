@@ -404,6 +404,7 @@ const styles = {
     width: "100%",
     fontSize: "15px",
     background: "transparent",
+    color: "#0f172a",
   },
 
   searchButton: {
