@@ -213,7 +213,7 @@ export default function EditPurchaseOrderModal({
         notes: formData.notes,
         items: formData.items.map((item) => ({
           ...(item.id ? { id: item.id } : {}),
-          variant: Number(item.variant),
+          product_variant: Number(item.variant),
           quantity: Number(item.quantity),
           unit_cost: Number(item.unit_cost) || 0,
         })),
