@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../libs/api"; // Adjust your API import path as needed
 import {
   Plus,
   FileText,
@@ -9,115 +8,193 @@ import {
   Filter,
   Inbox,
 } from "lucide-react";
+import api from "../libs/api";
 import DeletePurchaseOrderModal from "../components/purchasing/DeletePurchaseOrderModal";
+import EditPurchaseOrderModal from "../components/purchasing/EditPurchaseOrderModal";
 
 export default function PurchaseOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // UI State
   const [openMenu, setOpenMenu] = useState(null);
   const [deleteOrder, setDeleteOrder] = useState(null);
+  const [editOrder, setEditOrder] = useState(null);
+  const [editingLoading, setEditingLoading] = useState(false);
 
-  // Backend Filter State
+  const [suppliers, setSuppliers] = useState([]);
+  const [variants, setVariants] = useState([]);
+
   const [search, setSearch] = useState("");
-  const [activeSearch, setActiveSearch] = useState(""); // Only search when clicking button/Enter
+  const [activeSearch, setActiveSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Backend Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrev, setHasPrev] = useState(false);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [currentPage, activeSearch, statusFilter]);
-
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // 1. Create a clean object with our base parameters
-      const queryParams = {
+      const params = {
         page: currentPage,
       };
-      // // Build the query string dynamically
-      // let url = `/purchasing/purchase-orders/?page=${currentPage}`;
 
-      if (activeSearch) {
-        queryParams.search = activeSearch;
+      if (activeSearch.trim()) {
+        params.search = activeSearch.trim();
       }
 
       if (statusFilter !== "ALL") {
-        queryParams.status = statusFilter;
+        params.status = statusFilter;
       }
-      const response = await api.get("/purchasing/purchase-orders/", {
-        params: queryParams,
+
+      const response = await api.get("purchasing/purchase-orders/", {
+        params,
       });
 
-      // Update state with paginated DRF response
-      setOrders(response.data.results || []);
-      setTotalCount(response.data.count || 0);
-      setHasNext(Boolean(response.data.next));
-      setHasPrev(Boolean(response.data.previous));
+      const data = response.data;
+
+      setOrders(data.results || data || []);
+      setTotalCount(data.count || 0);
+      setHasNext(Boolean(data.next));
+      setHasPrev(Boolean(data.previous));
     } catch (err) {
-      setError("Failed to load purchase orders.");
+      console.error("Failed to load purchase orders:", err);
+
+      setError(
+        err.response?.data?.detail ||
+          "Failed to load purchase orders. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
-  // Trigger search on button click or Enter key
+
+  const loadModalData = async () => {
+    try {
+      const [supplierResponse, variantResponse] = await Promise.all([
+        api.get("purchasing/suppliers/", {
+          params: { page_size: 500 },
+        }),
+        api.get("products/variants/", {
+          params: { page_size: 500 },
+        }),
+      ]);
+
+      setSuppliers(
+        supplierResponse.data.results || supplierResponse.data || [],
+      );
+      setVariants(variantResponse.data.results || variantResponse.data || []);
+    } catch (err) {
+      console.error("Unable to load purchase order modal data:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [currentPage, activeSearch, statusFilter]);
+
+  useEffect(() => {
+    loadModalData();
+  }, []);
+
   const executeSearch = () => {
+    setCurrentPage(1);
     setActiveSearch(search);
-    setCurrentPage(1); // Reset to page 1 on new search
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") executeSearch();
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      executeSearch();
+    }
   };
 
-  const handleStatusChange = (e) => {
-    setStatusFilter(e.target.value);
-    setCurrentPage(1); // Reset to page 1 on new filter
+  const handleStatusChange = (event) => {
+    setStatusFilter(event.target.value);
+    setCurrentPage(1);
   };
 
   const handleDeleteSuccess = () => {
     setDeleteOrder(null);
-    fetchOrders(); // Refresh the list
+    fetchOrders();
+  };
+
+  const handleOpenEdit = async (order) => {
+    try {
+      setEditingLoading(true);
+      setOpenMenu(null);
+      setError(null);
+
+      // Gets the full purchase order details, including nested items.
+      const response = await api.get(`purchasing/purchase-orders/${order.id}/`);
+
+      setEditOrder(response.data);
+    } catch (err) {
+      console.error("Unable to load purchase order details:", err);
+
+      setError(
+        err.response?.data?.detail ||
+          "Unable to load purchase order details for editing.",
+      );
+    } finally {
+      setEditingLoading(false);
+    }
+  };
+
+  const handleEditSuccess = (updatedOrder) => {
+    setEditOrder(null);
+
+    if (updatedOrder?.id) {
+      setOrders((previousOrders) =>
+        previousOrders.map((order) =>
+          order.id === updatedOrder.id ? updatedOrder : order,
+        ),
+      );
+    } else {
+      fetchOrders();
+    }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "DRAFT":
         return { bg: "#f1f5f9", text: "#475569", border: "#e2e8f0" };
+
+      // case "PENDING":
+      //   return { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" };
+
       case "ORDERED":
         return { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" };
+
+      // case "PARTIAL":
+      //   return { bg: "#fefce8", text: "#a16207", border: "#fde68a" };
+
       case "RECEIVED":
         return { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" };
+
       case "CANCELLED":
         return { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" };
+
       default:
         return { bg: "#f1f5f9", text: "#475569", border: "#e2e8f0" };
     }
   };
 
-  // // Client-side filtering logic
-  // const filteredOrders = orders.filter((order) => {
-  //   const matchesSearch =
-  //     order.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     order.id.toString().includes(searchTerm);
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "-";
 
-  //   const matchesStatus =
-  //     statusFilter === "ALL" || order.status === statusFilter;
+    const date = new Date(dateValue);
 
-  //   return matchesSearch && matchesStatus;
-  // });
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleDateString();
+  };
 
   return (
     <div style={styles.page}>
-      {/* HEADER */}
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Purchase Orders</h1>
@@ -137,18 +214,19 @@ export default function PurchaseOrders() {
         </Link>
       </div>
 
-      {/* ACTION BAR (Backend Search & Filters) */}
       <div style={styles.actionBar}>
         <div style={styles.searchWrapper}>
           <Search size={18} color="#64748b" />
+
           <input
             type="text"
-            placeholder="Search by ID or Supplier..."
+            placeholder="Search by ID or supplier..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             onKeyDown={handleKeyDown}
             style={styles.searchInput}
           />
+
           <button onClick={executeSearch} style={styles.searchButton}>
             Search
           </button>
@@ -156,6 +234,7 @@ export default function PurchaseOrders() {
 
         <div style={styles.filterWrapper}>
           <Filter size={18} color="#64748b" />
+
           <select
             value={statusFilter}
             onChange={handleStatusChange}
@@ -163,41 +242,30 @@ export default function PurchaseOrders() {
           >
             <option value="ALL">All Statuses</option>
             <option value="DRAFT">Draft</option>
+            {/* <option value="PENDING">Pending</option> */}
             <option value="ORDERED">Ordered</option>
+            {/* <option value="PARTIAL">Partially Received</option> */}
             <option value="RECEIVED">Received</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
       </div>
 
-      {/* STATS */}
-      <div
-        style={{
-          marginBottom: "16px",
-          color: "#64748b",
-          fontSize: "14px",
-          fontWeight: "500",
-        }}
-      >
+      <div style={styles.summaryText}>
         Showing {orders.length} of {totalCount} total orders
       </div>
 
-      {/* CONTENT AREA */}
       {loading ? (
-        <div style={styles.emptyCard}>
-          <div className="animate-pulse">Loading orders...</div>
-        </div>
+        <div style={styles.emptyCard}>Loading orders...</div>
       ) : error ? (
         <div style={styles.errorCard}>{error}</div>
       ) : orders.length === 0 ? (
         <div style={styles.emptyCard}>
           <Inbox size={48} color="#cbd5e1" style={{ marginBottom: "16px" }} />
-          <h3 style={{ margin: "0 0 8px 0", color: "#0f172a" }}>
-            No orders found
-          </h3>
-          <p style={{ margin: 0, color: "#64748b" }}>
-            Adjust your search or filter criteria.
-          </p>
+
+          <h3 style={styles.emptyTitle}>No orders found</h3>
+
+          <p style={styles.emptyText}>Adjust your search or filter criteria.</p>
         </div>
       ) : (
         <div style={styles.tableContainer}>
@@ -213,12 +281,19 @@ export default function PurchaseOrders() {
                 <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {/* Notice we map directly over 'orders' now, not 'filteredOrders' */}
               {orders.map((order, index) => {
-                // 2. Calculate if this row is near the bottom of the table
                 const isNearBottom =
                   index >= orders.length - 2 && orders.length > 3;
+
+                const statusStyle = getStatusColor(order.status);
+
+                const expectedDate =
+                  order.expected_delivery ||
+                  order.expected_delivery_date ||
+                  order.delivery_date;
+
                 return (
                   <tr key={order.id} style={styles.tr}>
                     <td style={styles.td}>
@@ -227,36 +302,38 @@ export default function PurchaseOrders() {
                         PO #{order.id}
                       </div>
                     </td>
+
                     <td style={styles.td}>
                       <strong style={{ color: "#0f172a" }}>
-                        {order.supplier_name || `Supplier #${order.supplier}`}
+                        {order.supplier_name ||
+                          order.supplier?.name ||
+                          `Supplier #${order.supplier}`}
                       </strong>
                     </td>
-                    <td style={styles.td}>
-                      {new Date(order.order_date).toLocaleDateString()}
-                    </td>
-                    <td style={styles.td}>
-                      {order.expected_delivery
-                        ? new Date(order.expected_delivery).toLocaleDateString()
-                        : "-"}
-                    </td>
+
+                    <td style={styles.td}>{formatDate(order.order_date)}</td>
+
+                    <td style={styles.td}>{formatDate(expectedDate)}</td>
+
                     <td style={styles.td}>
                       <span style={styles.itemPill}>
-                        {order.items?.length || 0}
+                        {order.item_count || order.items?.length || 0}
                       </span>
                     </td>
+
                     <td style={styles.td}>
                       <span
                         style={{
                           ...styles.statusBadge,
-                          backgroundColor: getStatusColor(order.status).bg,
-                          color: getStatusColor(order.status).text,
-                          border: `1px solid ${getStatusColor(order.status).border}`,
+                          backgroundColor: statusStyle.bg,
+                          color: statusStyle.text,
+                          border: `1px solid ${statusStyle.border}`,
                         }}
                       >
                         {order.status}
                       </span>
                     </td>
+
                     <td style={{ ...styles.td, textAlign: "right" }}>
                       <div
                         style={{
@@ -265,12 +342,14 @@ export default function PurchaseOrders() {
                         }}
                       >
                         <button
+                          type="button"
                           style={styles.iconButton}
                           onClick={() =>
                             setOpenMenu(openMenu === order.id ? null : order.id)
                           }
+                          aria-label={`Actions for purchase order ${order.id}`}
                         >
-                          <MoreVertical size={18} />
+                          <MoreVertical size={19} color="#334155" />
                         </button>
 
                         {openMenu === order.id && (
@@ -279,7 +358,7 @@ export default function PurchaseOrders() {
                               style={styles.dropdownOverlay}
                               onClick={() => setOpenMenu(null)}
                             />
-                            {/* APPLY THE DROP-UP LOGIC HERE */}
+
                             <div
                               style={{
                                 ...styles.dropdown,
@@ -289,14 +368,18 @@ export default function PurchaseOrders() {
                                   : "auto",
                               }}
                             >
-                              <Link
-                                to={`/purchasing/purchase-orders/edit/${order.id}`}
+                              <button
+                                type="button"
                                 style={styles.dropdownItem}
+                                onClick={() => handleOpenEdit(order)}
                               >
                                 ✏️ Edit Order
-                              </Link>
-                              <div style={styles.dropdownDivider}></div>
+                              </button>
+
+                              <div style={styles.dropdownDivider} />
+
                               <button
+                                type="button"
                                 style={{
                                   ...styles.dropdownItem,
                                   color: "#dc2626",
@@ -321,12 +404,15 @@ export default function PurchaseOrders() {
         </div>
       )}
 
-      {/* BACKEND PAGINATION CONTROLS */}
+      {editingLoading && (
+        <div style={styles.loadingOverlay}>Loading order details...</div>
+      )}
+
       {totalCount > 0 && (
         <div style={styles.pagination}>
           <button
             disabled={!hasPrev}
-            onClick={() => setCurrentPage((p) => p - 1)}
+            onClick={() => setCurrentPage((page) => page - 1)}
             style={{
               ...styles.paginationButton,
               opacity: !hasPrev ? 0.5 : 1,
@@ -340,7 +426,7 @@ export default function PurchaseOrders() {
 
           <button
             disabled={!hasNext}
-            onClick={() => setCurrentPage((p) => p + 1)}
+            onClick={() => setCurrentPage((page) => page + 1)}
             style={{
               ...styles.paginationButton,
               opacity: !hasNext ? 0.5 : 1,
@@ -357,12 +443,25 @@ export default function PurchaseOrders() {
         onClose={() => setDeleteOrder(null)}
         onSuccess={handleDeleteSuccess}
       />
+
+      <EditPurchaseOrderModal
+        order={editOrder}
+        suppliers={suppliers}
+        variants={variants}
+        onClose={() => setEditOrder(null)}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }
 
 const styles = {
-  page: { padding: "32px", background: "#f8fafc", minHeight: "100vh" },
+  page: {
+    padding: "32px",
+    background: "#f8fafc",
+    minHeight: "100vh",
+  },
+
   header: {
     display: "flex",
     justifyContent: "space-between",
@@ -371,6 +470,7 @@ const styles = {
     flexWrap: "wrap",
     gap: "16px",
   },
+
   title: {
     margin: 0,
     fontSize: "28px",
@@ -378,7 +478,13 @@ const styles = {
     color: "#0f172a",
     letterSpacing: "-0.5px",
   },
-  subtitle: { marginTop: "6px", color: "#64748b", fontSize: "15px" },
+
+  subtitle: {
+    marginTop: "6px",
+    color: "#64748b",
+    fontSize: "15px",
+  },
+
   addButton: {
     display: "flex",
     alignItems: "center",
@@ -392,16 +498,15 @@ const styles = {
     fontSize: "14px",
     cursor: "pointer",
     boxShadow: "0 4px 12px rgba(37,99,235,0.2)",
-    transition: "transform 0.1s, box-shadow 0.1s",
   },
 
-  // NEW ACTION BAR STYLES
   actionBar: {
     display: "flex",
     gap: "16px",
     marginBottom: "24px",
     flexWrap: "wrap",
   },
+
   searchWrapper: {
     flex: "1 1 300px",
     display: "flex",
@@ -413,15 +518,17 @@ const styles = {
     border: "1px solid #e2e8f0",
     boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
   },
+
   searchButton: {
     background: "#f1f5f9",
     border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
+    padding: "7px 12px",
+    borderRadius: "7px",
     fontWeight: "600",
     color: "#475569",
     cursor: "pointer",
   },
+
   searchInput: {
     border: "none",
     outline: "none",
@@ -430,6 +537,7 @@ const styles = {
     background: "transparent",
     color: "#0f172a",
   },
+
   filterWrapper: {
     display: "flex",
     alignItems: "center",
@@ -440,6 +548,7 @@ const styles = {
     border: "1px solid #e2e8f0",
     boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
   },
+
   filterSelect: {
     border: "none",
     outline: "none",
@@ -450,7 +559,13 @@ const styles = {
     cursor: "pointer",
   },
 
-  // TABLE STYLES
+  summaryText: {
+    marginBottom: "16px",
+    color: "#64748b",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+
   tableContainer: {
     background: "#fff",
     borderRadius: "12px",
@@ -460,12 +575,14 @@ const styles = {
     boxShadow:
       "0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0,0,0,0.02)",
   },
+
   table: {
     width: "100%",
     borderCollapse: "collapse",
     textAlign: "left",
     whiteSpace: "nowrap",
   },
+
   th: {
     padding: "16px 20px",
     borderBottom: "1px solid #e2e8f0",
@@ -476,13 +593,18 @@ const styles = {
     letterSpacing: "0.5px",
     background: "#f8fafc",
   },
-  tr: { borderBottom: "1px solid #f1f5f9" },
+
+  tr: {
+    borderBottom: "1px solid #f1f5f9",
+  },
+
   td: {
     padding: "16px 20px",
     color: "#475569",
     fontSize: "14px",
     verticalAlign: "middle",
   },
+
   orderId: {
     display: "flex",
     alignItems: "center",
@@ -490,6 +612,7 @@ const styles = {
     color: "#0f172a",
     fontWeight: "600",
   },
+
   itemPill: {
     background: "#f1f5f9",
     color: "#475569",
@@ -498,6 +621,7 @@ const styles = {
     fontSize: "13px",
     fontWeight: "600",
   },
+
   statusBadge: {
     padding: "4px 12px",
     borderRadius: "20px",
@@ -506,27 +630,26 @@ const styles = {
     display: "inline-block",
   },
 
-  // DROPDOWN & BUTTONS
   iconButton: {
-    background: "transparent",
-    border: "1px solid transparent",
-    color: "#94a3b8",
+    background: "#f8fafc",
+    border: "1px solid #cbd5e1",
+    color: "#334155",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "6px",
+    padding: "7px",
     borderRadius: "8px",
-    transition: "all 0.2s",
   },
+
   dropdownOverlay: {
     position: "fixed",
     inset: 0,
     zIndex: 90,
   },
+
   dropdown: {
     position: "absolute",
-    top: "calc(100% + 4px)",
     right: 0,
     width: "180px",
     background: "#fff",
@@ -538,11 +661,13 @@ const styles = {
     zIndex: 100,
     padding: "4px",
   },
+
   dropdownDivider: {
     height: "1px",
     background: "#f1f5f9",
     margin: "4px 0",
   },
+
   dropdownItem: {
     width: "100%",
     padding: "10px 12px",
@@ -550,7 +675,6 @@ const styles = {
     background: "transparent",
     textAlign: "left",
     cursor: "pointer",
-    textDecoration: "none",
     color: "#334155",
     fontSize: "14px",
     fontWeight: "500",
@@ -560,7 +684,6 @@ const styles = {
     borderRadius: "6px",
   },
 
-  // ERROR & EMPTY STATES
   emptyCard: {
     background: "#fff",
     padding: "64px 20px",
@@ -571,6 +694,17 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
   },
+
+  emptyTitle: {
+    margin: "0 0 8px",
+    color: "#0f172a",
+  },
+
+  emptyText: {
+    margin: 0,
+    color: "#64748b",
+  },
+
   errorCard: {
     background: "#fef2f2",
     color: "#dc2626",
@@ -579,7 +713,7 @@ const styles = {
     border: "1px solid #fecaca",
     fontWeight: "500",
   },
-  // Add these for the new pagination bar at the bottom
+
   pagination: {
     marginTop: "24px",
     background: "#fff",
@@ -591,6 +725,7 @@ const styles = {
     alignItems: "center",
     boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
   },
+
   paginationButton: {
     padding: "8px 16px",
     borderRadius: "8px",
@@ -599,9 +734,22 @@ const styles = {
     color: "#334155",
     fontWeight: "600",
   },
+
   pageInfo: {
     fontSize: "15px",
     fontWeight: "600",
     color: "#0f172a",
+  },
+
+  loadingOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9998,
+    background: "rgba(15,23,42,0.35)",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "700",
   },
 };
