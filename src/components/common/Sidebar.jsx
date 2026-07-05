@@ -27,7 +27,7 @@ const navConfig = [
       },
       {
         name: "Print QR Labels",
-        path: "//inventory/labels",
+        path: "/inventory/labels",
         icon: "🏷️",
       },
     ],
