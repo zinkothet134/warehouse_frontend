@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import DeleteSupplierModal from "./DeleteSupplier";
 import EditSupplierModal from "./EditSupplier";
+import api from "../libs/api";
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
@@ -51,14 +52,12 @@ export default function Suppliers() {
 
       const token = localStorage.getItem("access");
 
-      const response = await fetch(
-        `http://localhost:8000/api/purchasing/suppliers/?page=${currentPage}&search=${activeSearch}`,
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-          },
+      const response = await api.get("purchasing/suppliers/", {
+        params: {
+          page: currentPage,
+          search: activeSearch,
         },
-      );
+      });
 
       if (!response.ok) {
         throw new Error("Failed to load suppliers");
