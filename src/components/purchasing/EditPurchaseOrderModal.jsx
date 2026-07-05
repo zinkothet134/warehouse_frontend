@@ -209,7 +209,7 @@ export default function EditPurchaseOrderModal({
         supplier: Number(formData.supplier),
         status: formData.status,
         order_date: formData.order_date,
-        expected_delivery_date: formData.expected_delivery_date || null,
+        expected_delivery: formData.expected_delivery_date || null,
         notes: formData.notes,
         items: formData.items.map((item) => ({
           ...(item.id ? { id: item.id } : {}),
