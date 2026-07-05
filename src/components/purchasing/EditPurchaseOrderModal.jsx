@@ -1,19 +1,16 @@
-import { useEffect, useMemo, useState, useRef } from "react";
-import {
-  CalendarDays,
-  PackagePlus,
-  Pencil,
-  Plus,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import api from "../../libs/api";
 
 const EMPTY_ITEM = {
   variant: "",
   quantity: 1,
   unit_cost: "",
+};
+
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  return String(value).slice(0, 10);
 };
 
 const getSupplierId = (order) =>
@@ -52,11 +49,20 @@ export default function EditPurchaseOrderModal({
 
   const orderDateRef = useRef(null);
   const deliveryDateRef = useRef(null);
+
   const openDatePicker = (inputRef) => {
-    if (inputRef.current?.showPicker) {
-      inputRef.current.showPicker();
-    } else {
-      inputRef.current?.focus();
+    const input = inputRef.current;
+
+    if (!input || loading) return;
+
+    input.focus();
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch (error) {
+        console.warn("Native calendar picker could not open:", error);
+      }
     }
   };
 
@@ -66,12 +72,13 @@ export default function EditPurchaseOrderModal({
     setFormData({
       supplier: getSupplierId(order),
       status: order.status || "PENDING",
-      order_date: order.order_date || order.created_at?.slice(0, 10) || "",
-      expected_delivery_date:
+      order_date: toDateInputValue(order.order_date || order.created_at),
+      expected_delivery_date: toDateInputValue(
         order.expected_delivery_date ||
-        order.delivery_date ||
-        order.expected_date ||
-        "",
+          order.expected_delivery ||
+          order.delivery_date ||
+          order.expected_date,
+      ),
       notes: order.notes || order.remark || "",
       items:
         order.items?.length > 0
@@ -310,17 +317,19 @@ export default function EditPurchaseOrderModal({
               </select>
             </label>
 
-            <label style={styles.fieldGroup}>
+            <div style={styles.fieldGroup}>
               <span style={styles.label}>Order Date</span>
 
               <div style={styles.inputWithIcon}>
                 <button
                   type="button"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => openDatePicker(orderDateRef)}
+                  disabled={loading}
                   style={styles.calendarButton}
                   aria-label="Choose order date"
                 >
-                  <CalendarDays size={16} color="#64748b" />
+                  <CalendarDays size={17} color="#2563eb" />
                 </button>
 
                 <input
@@ -334,19 +343,21 @@ export default function EditPurchaseOrderModal({
                   style={styles.dateInput}
                 />
               </div>
-            </label>
+            </div>
 
-            <label style={styles.fieldGroup}>
+            <div style={styles.fieldGroup}>
               <span style={styles.label}>Expected Delivery</span>
 
               <div style={styles.inputWithIcon}>
                 <button
                   type="button"
+                  onMouseDown={(event) => event.preventDefault()}
                   onClick={() => openDatePicker(deliveryDateRef)}
+                  disabled={loading}
                   style={styles.calendarButton}
                   aria-label="Choose expected delivery date"
                 >
-                  <CalendarDays size={16} color="#64748b" />
+                  <CalendarDays size={17} color="#2563eb" />
                 </button>
 
                 <input
@@ -360,7 +371,7 @@ export default function EditPurchaseOrderModal({
                   style={styles.dateInput}
                 />
               </div>
-            </label>
+            </div>
           </div>
 
           <label style={styles.fieldGroup}>
@@ -663,10 +674,14 @@ const styles = {
     borderRadius: "11px",
     background: "#ffffff",
   },
+
   calendarButton: {
+    width: "30px",
+    height: "30px",
+    flexShrink: 0,
     border: "none",
-    background: "transparent",
-    padding: "4px",
+    borderRadius: "7px",
+    background: "#eff6ff",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -674,12 +689,16 @@ const styles = {
   },
 
   dateInput: {
+    flex: 1,
+    minWidth: 0,
     border: "none",
     outline: "none",
     background: "transparent",
     color: "#0f172a",
     fontSize: "14px",
-    width: "100%",
+    fontFamily: "inherit",
+    cursor: "pointer",
+    colorScheme: "light",
   },
 
   textarea: {

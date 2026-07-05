@@ -573,7 +573,10 @@ export default function StaffManagement() {
                   placeholder={
                     modalMode === "edit" ? "Leave blank to keep current" : ""
                   }
-                  style={styles.input}
+                  style={{
+                    ...styles.input,
+                    color: "#0f172a",
+                  }}
                 />
               </label>
 
@@ -1016,7 +1019,8 @@ const styles = {
     padding: "11px 12px",
     border: "1px solid #cbd5e1",
     borderRadius: "8px",
-    color: "#fff",
+    color: "#0f172a",
+    background: "#ffffff",
     fontSize: "14px",
     outline: "none",
   },

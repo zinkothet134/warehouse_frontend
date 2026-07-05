@@ -25,6 +25,11 @@ const navConfig = [
         path: "/purchasing/purchase-orders",
         icon: "📋",
       },
+      {
+        name: "Print QR Labels",
+        path: "/print-labels",
+        icon: "🏷️",
+      },
     ],
   },
   {
