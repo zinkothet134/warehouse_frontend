@@ -19,16 +19,13 @@ const navConfig = [
       { name: "Products", path: "/products", icon: "👟" },
       { name: "Stock Levels", path: "/inventory/levels", icon: "📦" },
       { name: "Receive Stock", path: "/inventory/receive", icon: "📥" },
+      // 🌟 ADD THE PRINT LABELS ROUTE HERE 🌟
+      { name: "Print Labels", path: "/inventory/labels", icon: "🖨️" },
       { name: "Suppliers", path: "/purchasing/suppliers", icon: "🏭" },
       {
         name: "Purchase Orders",
         path: "/purchasing/purchase-orders",
         icon: "📋",
-      },
-      {
-        name: "Print QR Labels",
-        path: "/inventory/labels",
-        icon: "🏷️",
       },
     ],
   },
