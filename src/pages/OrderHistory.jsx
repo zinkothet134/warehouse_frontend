@@ -191,25 +191,32 @@ export default function OrderHistory() {
       )}
 
       {/* PAGINATION */}
-      {totalCount > 0 && (
-        <div style={styles.pagination}>
-          <button
-            disabled={!hasPrev}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            style={styles.pageBtn}
-          >
-            &larr; Previous
-          </button>
-          <div style={styles.pageInfo}>Page {currentPage}</div>
-          <button
-            disabled={!hasNext}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            style={styles.pageBtn}
-          >
-            Next &rarr;
-          </button>
-        </div>
-      )}
+      {/* PAGINATION - Always visible */}
+      <div style={styles.pagination}>
+        <button
+          disabled={!hasPrev}
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          style={{
+            ...styles.pageBtn,
+            opacity: !hasPrev ? 0.5 : 1,
+            cursor: !hasPrev ? "not-allowed" : "pointer",
+          }}
+        >
+          &larr; Previous
+        </button>
+        <div style={styles.pageInfo}>Page {currentPage}</div>
+        <button
+          disabled={!hasNext}
+          onClick={() => setCurrentPage((p) => p + 1)}
+          style={{
+            ...styles.pageBtn,
+            opacity: !hasNext ? 0.5 : 1,
+            cursor: !hasNext ? "not-allowed" : "pointer",
+          }}
+        >
+          Next &rarr;
+        </button>
+      </div>
       {/* RECEIPT MODAL */}
       <ReceiptModal
         order={selectedOrder}
