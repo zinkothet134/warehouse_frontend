@@ -74,7 +74,15 @@ export default function AddProduct() {
         ?.name?.substring(0, 3)
         ?.toUpperCase() || "CAT";
 
-    const product = p.name?.substring(0, 3)?.toUpperCase() || "PRD";
+    // const product = p.name?.substring(0, 3)?.toUpperCase() || "PRD";
+    const product = p.name
+      ? p.name
+          .trim()
+          .split(/\s+/) // Splits the name by spaces
+          .map((word) => word.charAt(0)) // Grabs the first letter of each word
+          .join("") // Joins those letters together
+          .toUpperCase()
+      : "PRD";
 
     const clr = color?.substring(0, 3)?.toUpperCase() || "CLR";
 
