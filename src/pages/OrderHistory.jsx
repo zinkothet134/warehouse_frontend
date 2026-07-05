@@ -32,7 +32,7 @@ export default function OrderHistory() {
       if (statusFilter !== "ALL") params.status = statusFilter;
 
       // Adjust this URL to match your Django router for orders
-      const response = await api.get("/sales/orders/", { params });
+      const response = await api.get("sales/orders/", { params });
 
       setOrders(response.data.results || response.data);
       setTotalCount(response.data.count || 0);
