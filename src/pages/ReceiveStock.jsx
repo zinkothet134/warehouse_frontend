@@ -109,8 +109,7 @@ export default function ReceiveStock() {
 
                 {variants.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.product_name || v.product?.name || "Product"} — {v.sku} -{" "}
-                    {v.color} ( Size {v.size})
+                    {v.product_name || v.product?.name || "Product"} — {v.sku}
                   </option>
                 ))}
               </select>
