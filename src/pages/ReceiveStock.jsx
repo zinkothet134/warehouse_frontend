@@ -109,7 +109,8 @@ export default function ReceiveStock() {
 
                 {variants.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.sku} - {v.color} ( Size {v.size})
+                    {v.product_name || v.product?.name || "Product"} — {v.sku} -{" "}
+                    {v.color} ( Size {v.size})
                   </option>
                 ))}
               </select>
@@ -141,11 +142,17 @@ export default function ReceiveStock() {
 
           {selectedVariant && (
             <div style={styles.previewCard}>
+              {/* 👇 Added Product Name as the bold title of the preview card */}
+              <div style={styles.previewTitle}>
+                {selectedVariant.product_name ||
+                  selectedVariant.product?.name ||
+                  "Unknown Product"}
+              </div>
               <div style={styles.previewSku}>{selectedVariant.sku}</div>
 
-              <div>Color: {selectedVariant.color}</div>
+              <div>Color: {selectedVariant.color || "N/A"}</div>
 
-              <div>Size: {selectedVariant.size}</div>
+              <div>Size: {selectedVariant.size || "N/A"}</div>
             </div>
           )}
         </div>
@@ -289,6 +296,13 @@ const styles = {
     background: "#eff6ff",
     borderRadius: "12px",
     border: "1px solid #bfdbfe",
+  },
+  // 👇 ADD THIS NEW STYLE
+  previewTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: "4px",
   },
 
   previewSku: {
