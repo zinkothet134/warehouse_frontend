@@ -50,8 +50,6 @@ export default function POS() {
   };
 
   // --- DYNAMIC VARIANT HELPERS --- //
-  // Adjust 'attributes' below if your API uses a different field name for the dynamic data
-
   const getCartDisplayInfo = (variant) => {
     if (!variant.attributes) return "Standard";
 
@@ -227,9 +225,42 @@ export default function POS() {
     );
   };
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const handleQuantityChange = (variantId, rawValue) => {
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.variant === variantId) {
+          // Allow empty string temporarily while the user is actively backspacing/typing
+          if (rawValue === "") {
+            return { ...item, quantity: "" };
+          }
+          const qty = parseInt(rawValue, 10);
+          return { ...item, quantity: isNaN(qty) ? item.quantity : qty };
+        }
+        return item;
+      }),
+    );
+  };
+
+  const handleQuantityBlur = () => {
+    // When the user clicks away from the input, clean up any empty or zero values
+    setCart(
+      (prev) =>
+        prev
+          .map((item) => ({
+            ...item,
+            quantity:
+              item.quantity === "" || item.quantity <= 0 ? 0 : item.quantity,
+          }))
+          .filter((item) => item.quantity > 0), // Remove item if quantity resolved to 0
+    );
+  };
+
+  const totalItems = cart.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0),
+    0,
+  );
   const cartTotal = cart.reduce(
-    (sum, item) => sum + item.quantity * item.price_at_sale,
+    (sum, item) => sum + (Number(item.quantity) || 0) * item.price_at_sale,
     0,
   );
 
@@ -423,7 +454,7 @@ export default function POS() {
                         <div style={styles.skuText}>{v.sku}</div>
                       </div>
 
-                      {/* 👇 DYNAMIC VARIANTS RENDERED HERE 👇 */}
+                      {/* DYNAMIC VARIANTS RENDERED HERE */}
                       <div style={styles.badgeRow}>
                         {renderVariantBadges(v)}
                       </div>
@@ -511,6 +542,8 @@ export default function POS() {
                     {formatPrice(item.price_at_sale)} each
                   </div>
                 </div>
+
+                {/* NEW EDITABLE QUANTITY BOX */}
                 <div style={styles.qtyBox}>
                   <button
                     style={styles.qtyBtn}
@@ -518,7 +551,15 @@ export default function POS() {
                   >
                     −
                   </button>
-                  <span style={styles.qtyText}>{item.quantity}</span>
+                  <input
+                    type="text"
+                    style={styles.qtyInput}
+                    value={item.quantity}
+                    onChange={(e) =>
+                      handleQuantityChange(item.variant, e.target.value)
+                    }
+                    onBlur={handleQuantityBlur}
+                  />
                   <button
                     style={styles.qtyBtn}
                     onClick={() => updateQuantity(item.variant, 1)}
@@ -897,11 +938,18 @@ const styles = {
     justifyContent: "center",
     transition: "background 0.1s",
   },
-  qtyText: {
-    fontWeight: "600",
-    width: "20px",
+  qtyInput: {
+    width: "48px",
     textAlign: "center",
+    fontWeight: "700",
     color: "#0f172a",
+    border: "1px solid #cbd5e1",
+    borderRadius: "6px",
+    padding: "6px 4px",
+    fontSize: "14px",
+    outline: "none",
+    background: "#fff",
+    boxShadow: "inset 0 1px 2px rgba(0, 0, 0, 0.05)",
   },
   checkout: { marginTop: "24px", paddingTop: "24px" },
   totalRow: {
