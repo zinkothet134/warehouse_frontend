@@ -122,11 +122,19 @@ export default function AddPurchaseOrder() {
                   required
                 >
                   <option value="">-- Select Supplier --</option>
-                  {suppliers.map((sup) => (
-                    <option key={sup.id} value={sup.id}>
-                      {sup.name}
+
+                  {/* 👇 Added the array safety check here */}
+                  {!Array.isArray(suppliers) || suppliers.length === 0 ? (
+                    <option value="" disabled>
+                      No suppliers available
                     </option>
-                  ))}
+                  ) : (
+                    suppliers.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -198,11 +206,17 @@ export default function AddPurchaseOrder() {
                     required
                   >
                     <option value="">Select a product...</option>
-                    {products.map((prod) => (
-                      <option key={prod.id} value={prod.id}>
-                        {prod.sku || `Product #${prod.id}`}
+                    {!Array.isArray(products) || products.length === 0 ? (
+                      <option value="" disabled>
+                        No products available
                       </option>
-                    ))}
+                    ) : (
+                      products.map((prod) => (
+                        <option key={prod.id} value={prod.id}>
+                          {prod.sku || `Product #${prod.id}`}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 

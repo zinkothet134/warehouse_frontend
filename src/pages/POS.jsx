@@ -343,68 +343,82 @@ export default function POS() {
             </div>
           ) : (
             <div style={styles.productGrid}>
-              {variants.map((v) => {
-                const stockLevel = v.stock || 0;
-                const isOutOfStock = stockLevel <= 0;
+              {/* 👇 Added the array safety check here */}
+              {!Array.isArray(variants) || variants.length === 0 ? (
+                <div
+                  style={{
+                    gridColumn: "1 / -1",
+                    textAlign: "center",
+                    padding: "30px",
+                    color: "#64748b",
+                  }}
+                >
+                  No variants available.
+                </div>
+              ) : (
+                variants.map((v) => {
+                  const stockLevel = v.stock || 0;
+                  const isOutOfStock = stockLevel <= 0;
 
-                return (
-                  <div
-                    key={v.id}
-                    style={{
-                      ...styles.productCard,
-                      opacity: isOutOfStock ? 0.6 : 1,
-                      cursor: isOutOfStock ? "not-allowed" : "pointer",
-                      border: isOutOfStock
-                        ? "1px solid #e2e8f0"
-                        : "1px solid #bfdbfe",
-                    }}
-                    onClick={() => !isOutOfStock && addToCart(v)}
-                  >
-                    <div style={styles.cardHeader}>
-                      <div style={styles.productName}>
-                        {v.product_name || "Unknown Product"}
-                      </div>
-                      <div style={styles.skuText}>{v.sku}</div>
-                    </div>
-
-                    <div style={styles.badgeRow}>
-                      <span style={styles.variantBadge}>{v.color}</span>
-                      <span style={styles.variantBadge}>Size {v.size}</span>
-                    </div>
-
-                    <div style={styles.cardFooter}>
-                      <div style={styles.price}>
-                        $
-                        {Number(
-                          saleMode === "WHOLESALE"
-                            ? v.wholesale_price
-                            : v.retail_price,
-                        ).toFixed(2)}
+                  return (
+                    <div
+                      key={v.id}
+                      style={{
+                        ...styles.productCard,
+                        opacity: isOutOfStock ? 0.6 : 1,
+                        cursor: isOutOfStock ? "not-allowed" : "pointer",
+                        border: isOutOfStock
+                          ? "1px solid #e2e8f0"
+                          : "1px solid #bfdbfe",
+                      }}
+                      onClick={() => !isOutOfStock && addToCart(v)}
+                    >
+                      <div style={styles.cardHeader}>
+                        <div style={styles.productName}>
+                          {v.product_name || "Unknown Product"}
+                        </div>
+                        <div style={styles.skuText}>{v.sku}</div>
                       </div>
 
-                      <div
-                        style={
-                          stockLevel > 5
-                            ? styles.stockGood
-                            : stockLevel > 0
-                              ? styles.stockLow
-                              : styles.stockOut
-                        }
-                      >
-                        {stockLevel > 0 ? (
-                          <>
-                            <Package size={14} /> {stockLevel} in stock
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle size={14} /> Out of stock
-                          </>
-                        )}
+                      <div style={styles.badgeRow}>
+                        <span style={styles.variantBadge}>{v.color}</span>
+                        <span style={styles.variantBadge}>Size {v.size}</span>
+                      </div>
+
+                      <div style={styles.cardFooter}>
+                        <div style={styles.price}>
+                          $
+                          {Number(
+                            saleMode === "WHOLESALE"
+                              ? v.wholesale_price
+                              : v.retail_price,
+                          ).toFixed(2)}
+                        </div>
+
+                        <div
+                          style={
+                            stockLevel > 5
+                              ? styles.stockGood
+                              : stockLevel > 0
+                                ? styles.stockLow
+                                : styles.stockOut
+                          }
+                        >
+                          {stockLevel > 0 ? (
+                            <>
+                              <Package size={14} /> {stockLevel} in stock
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={14} /> Out of stock
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           )}
 

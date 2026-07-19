@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "../../assets/common/Sidebar.css";
+import { icons } from "lucide-react";
 
 // 1. Define the Navigation Configuration Object
 const navConfig = [
@@ -17,8 +18,13 @@ const navConfig = [
     items: [
       { name: "Brands & Categories", path: "/products/attributes", icon: "🏷️" },
       { name: "Products", path: "/products", icon: "👟" },
+      { name: "Product Variant", path: "/variants", icon: "𝍔" },
       { name: "Stock Levels", path: "/inventory/levels", icon: "📦" },
       { name: "Receive Stock", path: "/inventory/receive", icon: "📥" },
+      // 👇 Add the new location links here
+      { name: "Locations", path: "/inventory/locations", icon: "🏠" },
+
+      // { name: "Add Location", path: "/inventory/locations/add" },
       // 🌟 ADD THE PRINT LABELS ROUTE HERE 🌟
       { name: "Print Labels", path: "/inventory/labels", icon: "🖨️" },
       { name: "Suppliers", path: "/purchasing/suppliers", icon: "🏭" },

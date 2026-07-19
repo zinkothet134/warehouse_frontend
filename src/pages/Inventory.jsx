@@ -65,11 +65,15 @@ export default function Inventory() {
     };
   }, [currentPage, activeSearch]);
 
-  const lowStockCount = stockLevels.filter((item) => item.is_low_stock).length;
-  const totalQuantityOnPage = stockLevels.reduce(
-    (sum, item) => sum + Number(item.quantity_on_hand || 0),
-    0,
-  );
+  const lowStockCount = Array.isArray(stockLevels)
+    ? stockLevels.filter((item) => item.is_low_stock).length
+    : 0;
+  const totalQuantityOnPage = Array.isArray(stockLevels)
+    ? stockLevels.reduce(
+        (sum, item) => sum + Number(item.quantity_on_hand || 0),
+        0,
+      )
+    : 0;
 
   return (
     <div style={styles.page}>
@@ -138,41 +142,57 @@ export default function Inventory() {
                 </tr>
               </thead>
               <tbody>
-                {stockLevels.map((item) => (
-                  <tr key={item.id} style={styles.tr}>
-                    <td style={styles.td}>
-                      <span style={styles.skuText}>{item.sku}</span>
-                    </td>
-                    <td style={styles.td}>
-                      <strong style={{ color: "#0f172a", fontSize: "15px" }}>
-                        {item.product_name}
-                      </strong>
-                    </td>
-                    <td style={styles.td}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        📍 {item.location_name}
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={styles.quantityText}>
-                        {item.quantity_on_hand}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      {item.is_low_stock ? (
-                        <span style={styles.lowStockBadge}>Low Stock</span>
-                      ) : (
-                        <span style={styles.inStockBadge}>In Stock</span>
-                      )}
+                {!Array.isArray(stockLevels) || stockLevels.length === 0 ? (
+                  /* 2. TRUE: Show fallback row */
+                  <tr>
+                    <td
+                      colSpan="5"
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "#64748b",
+                      }}
+                    >
+                      No stock data available.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  stockLevels.map((item) => (
+                    <tr key={item.id} style={styles.tr}>
+                      <td style={styles.td}>
+                        <span style={styles.skuText}>{item.sku}</span>
+                      </td>
+                      <td style={styles.td}>
+                        <strong style={{ color: "#0f172a", fontSize: "15px" }}>
+                          {item.product_name}
+                        </strong>
+                      </td>
+                      <td style={styles.td}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          📍 {item.location_name}
+                        </div>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={styles.quantityText}>
+                          {item.quantity_on_hand}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {item.is_low_stock ? (
+                          <span style={styles.lowStockBadge}>Low Stock</span>
+                        ) : (
+                          <span style={styles.inStockBadge}>In Stock</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

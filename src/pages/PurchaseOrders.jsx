@@ -57,10 +57,17 @@ export default function PurchaseOrders() {
 
       const data = response.data;
 
-      setOrders(data.results || data || []);
-      setTotalCount(data.count || 0);
-      setHasNext(Boolean(data.next));
-      setHasPrev(Boolean(data.previous));
+      // FIXED: Strictly ensure we are extracting an array, otherwise default to []
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : Array.isArray(data)
+          ? data
+          : [];
+
+      setOrders(results);
+      setTotalCount(data?.count || results.length);
+      setHasNext(Boolean(data?.next));
+      setHasPrev(Boolean(data?.previous));
     } catch (err) {
       console.error("Failed to load purchase orders:", err);
 
@@ -84,10 +91,23 @@ export default function PurchaseOrders() {
         }),
       ]);
 
+      const supplierData = supplierResponse.data;
+      const variantData = variantResponse.data;
+
       setSuppliers(
-        supplierResponse.data.results || supplierResponse.data || [],
+        Array.isArray(supplierData?.results)
+          ? supplierData.results
+          : Array.isArray(supplierData)
+            ? supplierData
+            : [],
       );
-      setVariants(variantResponse.data.results || variantResponse.data || []);
+      setVariants(
+        Array.isArray(variantData?.results)
+          ? variantData.results
+          : Array.isArray(variantData)
+            ? variantData
+            : [],
+      );
     } catch (err) {
       console.error("Unable to load purchase order modal data:", err);
     }
@@ -128,9 +148,7 @@ export default function PurchaseOrders() {
       setOpenMenu(null);
       setError(null);
 
-      // Gets the full purchase order details, including nested items.
       const response = await api.get(`purchasing/purchase-orders/${order.id}/`);
-
       setEditOrder(response.data);
     } catch (err) {
       console.error("Unable to load purchase order details:", err);
@@ -162,22 +180,12 @@ export default function PurchaseOrders() {
     switch (status) {
       case "DRAFT":
         return { bg: "#f1f5f9", text: "#475569", border: "#e2e8f0" };
-
-      // case "PENDING":
-      //   return { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" };
-
       case "ORDERED":
         return { bg: "#eff6ff", text: "#2563eb", border: "#bfdbfe" };
-
-      // case "PARTIAL":
-      //   return { bg: "#fefce8", text: "#a16207", border: "#fde68a" };
-
       case "RECEIVED":
         return { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" };
-
       case "CANCELLED":
         return { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" };
-
       default:
         return { bg: "#f1f5f9", text: "#475569", border: "#e2e8f0" };
     }
@@ -185,11 +193,8 @@ export default function PurchaseOrders() {
 
   const formatDate = (dateValue) => {
     if (!dateValue) return "-";
-
     const date = new Date(dateValue);
-
     if (Number.isNaN(date.getTime())) return "-";
-
     return date.toLocaleDateString();
   };
 
@@ -242,24 +247,24 @@ export default function PurchaseOrders() {
           >
             <option value="ALL">All Statuses</option>
             <option value="DRAFT">Draft</option>
-            {/* <option value="PENDING">Pending</option> */}
             <option value="ORDERED">Ordered</option>
-            {/* <option value="PARTIAL">Partially Received</option> */}
             <option value="RECEIVED">Received</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
       </div>
 
+      {/* FIXED: Added array check so strings don't render their character length */}
       <div style={styles.summaryText}>
-        Showing {orders.length} of {totalCount} total orders
+        Showing {Array.isArray(orders) ? orders.length : 0} of {totalCount}{" "}
+        total orders
       </div>
 
       {loading ? (
         <div style={styles.emptyCard}>Loading orders...</div>
       ) : error ? (
         <div style={styles.errorCard}>{error}</div>
-      ) : orders.length === 0 ? (
+      ) : !Array.isArray(orders) || orders.length === 0 ? (
         <div style={styles.emptyCard}>
           <Inbox size={48} color="#cbd5e1" style={{ marginBottom: "16px" }} />
 
@@ -408,35 +413,34 @@ export default function PurchaseOrders() {
         <div style={styles.loadingOverlay}>Loading order details...</div>
       )}
 
-      {totalCount > 0 && (
-        <div style={styles.pagination}>
-          <button
-            disabled={!hasPrev}
-            onClick={() => setCurrentPage((page) => page - 1)}
-            style={{
-              ...styles.paginationButton,
-              opacity: !hasPrev ? 0.5 : 1,
-              cursor: !hasPrev ? "not-allowed" : "pointer",
-            }}
-          >
-            ← Previous
-          </button>
+      {/* FIXED: Removed the {totalCount > 0 && (...)} wrapper so it always shows */}
+      <div style={styles.pagination}>
+        <button
+          disabled={!hasPrev}
+          onClick={() => setCurrentPage((page) => page - 1)}
+          style={{
+            ...styles.paginationButton,
+            opacity: !hasPrev ? 0.5 : 1,
+            cursor: !hasPrev ? "not-allowed" : "pointer",
+          }}
+        >
+          ← Previous
+        </button>
 
-          <div style={styles.pageInfo}>Page {currentPage}</div>
+        <div style={styles.pageInfo}>Page {currentPage}</div>
 
-          <button
-            disabled={!hasNext}
-            onClick={() => setCurrentPage((page) => page + 1)}
-            style={{
-              ...styles.paginationButton,
-              opacity: !hasNext ? 0.5 : 1,
-              cursor: !hasNext ? "not-allowed" : "pointer",
-            }}
-          >
-            Next →
-          </button>
-        </div>
-      )}
+        <button
+          disabled={!hasNext}
+          onClick={() => setCurrentPage((page) => page + 1)}
+          style={{
+            ...styles.paginationButton,
+            opacity: !hasNext ? 0.5 : 1,
+            cursor: !hasNext ? "not-allowed" : "pointer",
+          }}
+        >
+          Next →
+        </button>
+      </div>
 
       <DeletePurchaseOrderModal
         order={deleteOrder}

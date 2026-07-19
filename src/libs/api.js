@@ -1,13 +1,24 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/";
+// --- 1. DYNAMIC BASE URL SETUP ---
+// We dynamically capture the current hostname (e.g., 'store_a.localhost')
+// so Axios automatically sends requests to the correct tenant's backend.
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // Fallback for local development: map the frontend's current subdomain to the backend port
+  const host = window.location.hostname;
+  return `http://${host}:8000/api/`;
+};
+
+const API_BASE_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// // 2. REQUEST INTERCEPTOR: Automatically attach the token to every outgoing request
+// --- 2. REQUEST INTERCEPTOR ---
 api.interceptors.request.use(
   (config) => {
     // Look for the token in local storage
@@ -21,8 +32,8 @@ api.interceptors.request.use(
     return Promise.reject(error);
   },
 );
-// // 3. RESPONSE INTERCEPTOR: The Magic "Silent Refresh"
-// 3. RESPONSE INTERCEPTOR: The Magic "Silent Refresh"
+
+// --- 3. RESPONSE INTERCEPTOR ---
 api.interceptors.response.use(
   (response) => {
     // If the request succeeds normally, just pass it through
@@ -45,18 +56,20 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          // 1. Ask Django for a brand new access token
+          // --- FIX APPLIED HERE ---
+          // Dynamically use API_BASE_URL so the refresh request goes to the specific
+          // tenant (e.g., http://store_a.localhost:8000/api/accounts/token/refresh/)
           const response = await axios.post(
-            "http://localhost:8000/api/accounts/token/refresh/",
+            `${API_BASE_URL}accounts/token/refresh/`,
             {
               refresh: refreshToken,
             },
           );
 
-          // 2. Save the new token to localStorage
+          // Save the new token to localStorage
           localStorage.setItem("access", response.data.access);
 
-          // 3. Update the failed request with the new token and TRY AGAIN
+          // Update the failed request with the new token and TRY AGAIN
           originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
           return api(originalRequest);
         } catch (refreshError) {

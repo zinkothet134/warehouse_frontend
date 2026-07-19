@@ -58,13 +58,18 @@ export default function Suppliers() {
         },
       });
 
-      const data = await response.data;
+      // Handle both paginated responses (response.data.results)
+      // and non-paginated lists (response.data)
+      const results =
+        response.data.results ||
+        (Array.isArray(response.data) ? response.data : []);
+      const count = response.data.count || results.length;
 
-      setSuppliers(data.results || data || []);
-      setTotalSuppliers(data.count || 0);
+      setSuppliers(results);
+      setTotalSuppliers(count);
 
-      setHasNext(Boolean(data.next));
-      setHasPrev(Boolean(data.previous));
+      setHasNext(Boolean(response.data.next));
+      setHasPrev(Boolean(response.data.previous));
     } catch (err) {
       console.error("Failed to fetch suppliers:", err);
 
@@ -175,82 +180,99 @@ export default function Suppliers() {
         <div style={styles.emptyCard}>No suppliers found.</div>
       ) : (
         <div style={styles.cardGrid}>
-          {suppliers.map((supplier) => (
+          {/* 👇 Added the array safety check here */}
+          {!Array.isArray(suppliers) || suppliers.length === 0 ? (
             <div
-              key={supplier.id}
-              style={styles.supplierCard}
-              className="supplier-card"
+              style={{
+                color: "#64748b",
+                padding: "20px",
+                width: "100%",
+                gridColumn: "1 / -1",
+                textAlign: "center",
+              }}
             >
-              <div style={styles.cardHeader}>
-                <div>
-                  <h3 style={styles.supplierName}>{supplier.name}</h3>
+              No suppliers available.
+            </div>
+          ) : (
+            suppliers.map((supplier) => (
+              <div
+                key={supplier.id}
+                style={styles.supplierCard}
+                className="supplier-card"
+              >
+                <div style={styles.cardHeader}>
+                  <div>
+                    <h3 style={styles.supplierName}>{supplier.name}</h3>
 
-                  <div style={styles.address}>
-                    <MapPin size={14} />
-                    {supplier.address || "No address"}
+                    <div style={styles.address}>
+                      <MapPin size={14} />
+                      {supplier.address || "No address"}
+                    </div>
+                  </div>
+
+                  <div style={{ position: "relative" }}>
+                    <button
+                      style={styles.actionButton}
+                      onClick={() =>
+                        setOpenMenu(
+                          openMenu === supplier.id ? null : supplier.id,
+                        )
+                      }
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+                    {openMenu === supplier.id && (
+                      <div style={styles.dropdown}>
+                        <button
+                          style={{
+                            ...styles.dropdownItem,
+                            color: "#8fc511",
+                          }}
+                          onClick={() => {
+                            setEditSupplier(supplier);
+                            setOpenMenu(null);
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+
+                        <button
+                          style={{
+                            ...styles.dropdownItem,
+                            color: "#dc2626",
+                          }}
+                          onClick={() => {
+                            setDeleteSupplier(supplier);
+                            setOpenMenu(null);
+                          }}
+                        >
+                          🗑 Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div style={{ position: "relative" }}>
-                  <button
-                    style={styles.actionButton}
-                    onClick={() =>
-                      setOpenMenu(openMenu === supplier.id ? null : supplier.id)
-                    }
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                  {openMenu === supplier.id && (
-                    <div style={styles.dropdown}>
-                      <button
-                        style={{
-                          ...styles.dropdownItem,
-                          color: "#8fc511",
-                        }}
-                        onClick={() => {
-                          setEditSupplier(supplier);
-                          setOpenMenu(null);
-                        }}
-                      >
-                        ✏️ Edit
-                      </button>
+                <div style={styles.divider}></div>
 
-                      <button
-                        style={{
-                          ...styles.dropdownItem,
-                          color: "#dc2626",
-                        }}
-                        onClick={() => {
-                          setDeleteSupplier(supplier);
-                          setOpenMenu(null);
-                        }}
-                      >
-                        🗑 Delete
-                      </button>
-                    </div>
-                  )}
+                <div style={styles.contactSection}>
+                  <div style={styles.contactRow}>
+                    👤 {supplier.contact_name || "No Contact Assigned"}
+                  </div>
+
+                  <div style={styles.contactRow}>
+                    <Mail size={15} />
+                    {supplier.email || "-"}
+                  </div>
+
+                  <div style={styles.contactRow}>
+                    <Phone size={15} />
+                    {supplier.phone || "-"}
+                  </div>
                 </div>
               </div>
-
-              <div style={styles.divider}></div>
-
-              <div style={styles.contactSection}>
-                <div style={styles.contactRow}>
-                  👤 {supplier.contact_name || "No Contact Assigned"}
-                </div>
-
-                <div style={styles.contactRow}>
-                  <Mail size={15} />
-                  {supplier.email || "-"}
-                </div>
-
-                <div style={styles.contactRow}>
-                  <Phone size={15} />
-                  {supplier.phone || "-"}
-                </div>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 

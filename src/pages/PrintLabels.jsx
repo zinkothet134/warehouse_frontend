@@ -202,38 +202,52 @@ export default function PrintLabels() {
               </div>
             ) : (
               <div style={styles.productGrid}>
-                {variants.map((v) => {
-                  const queuedCount = getQueueCount(v.id);
-                  return (
-                    <div key={v.id} style={styles.productCard}>
-                      <div style={styles.cardHeader}>
-                        <div style={styles.productName}>{v.product_name}</div>
-                        <div style={styles.skuText}>{v.sku}</div>
-                      </div>
+                {/* 👇 Added the array safety check here */}
+                {!Array.isArray(variants) || variants.length === 0 ? (
+                  <div
+                    style={{
+                      padding: "20px",
+                      color: "#64748b",
+                      gridColumn: "1 / -1",
+                      textAlign: "center",
+                    }}
+                  >
+                    No variants found.
+                  </div>
+                ) : (
+                  variants.map((v) => {
+                    const queuedCount = getQueueCount(v.id);
+                    return (
+                      <div key={v.id} style={styles.productCard}>
+                        <div style={styles.cardHeader}>
+                          <div style={styles.productName}>{v.product_name}</div>
+                          <div style={styles.skuText}>{v.sku}</div>
+                        </div>
 
-                      <div style={styles.badgeRow}>
-                        <span style={styles.variantBadge}>{v.color}</span>
-                        <span style={styles.variantBadge}>Size {v.size}</span>
-                      </div>
+                        <div style={styles.badgeRow}>
+                          <span style={styles.variantBadge}>{v.color}</span>
+                          <span style={styles.variantBadge}>Size {v.size}</span>
+                        </div>
 
-                      <div style={styles.cardFooter}>
-                        {queuedCount > 0 ? (
-                          <div style={styles.queuedBadge}>
-                            {queuedCount} in queue
-                          </div>
-                        ) : (
-                          <div></div> /* Spacer */
-                        )}
-                        <button
-                          onClick={() => addToQueue(v)}
-                          style={styles.addBtn}
-                        >
-                          <Plus size={16} /> Add
-                        </button>
+                        <div style={styles.cardFooter}>
+                          {queuedCount > 0 ? (
+                            <div style={styles.queuedBadge}>
+                              {queuedCount} in queue
+                            </div>
+                          ) : (
+                            <div></div> /* Spacer */
+                          )}
+                          <button
+                            onClick={() => addToQueue(v)}
+                            style={styles.addBtn}
+                          >
+                            <Plus size={16} /> Add
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             )}
           </div>

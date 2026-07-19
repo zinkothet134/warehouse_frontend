@@ -32,6 +32,10 @@ import Customers from "./pages/Customers";
 import EditProduct from "./pages/EditProduct";
 import PrintLabels from "./pages/PrintLabels";
 import StaffManagement from "./pages/StaffManagement";
+import VariantManager from "./pages/VariantManager";
+import AddLocation from "./pages/AddLocation";
+import LocationList from "./pages/LocationList";
+import EditLocation from "./pages/EditLocation";
 
 // // Mock pages for testing (We will build real versions of these next!)
 // const Dashboard = () => (
@@ -69,9 +73,16 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="products" element={<Products />} />
+          <Route path="/variants" element={<VariantManager />} />
           <Route path="products/add" element={<AddProduct />} />
           <Route path="inventory/levels" element={<Inventory />} />{" "}
           <Route path="inventory/receive" element={<ReceiveStock />} />
+          <Route path="/inventory/locations" element={<LocationList />} />
+          <Route path="/inventory/locations/add" element={<AddLocation />} />
+          <Route
+            path="/inventory/locations/edit/:id"
+            element={<EditLocation />}
+          />
           <Route path="pos" element={<POS />} />
           {/* 👈 This will now load your real table */}
           <Route path="products/attributes" element={<BrandsCategories />} />

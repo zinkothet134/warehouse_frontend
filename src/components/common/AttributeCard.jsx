@@ -31,7 +31,7 @@ export default function AttributeCard({
       </div>
 
       <div style={styles.listContainer}>
-        {items.length === 0 ? (
+        {!Array.isArray(items) || items.length === 0 ? (
           <p style={styles.emptyText}>No {title.toLowerCase()} added yet.</p>
         ) : (
           items.map((item) => (

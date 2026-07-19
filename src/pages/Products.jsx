@@ -88,8 +88,7 @@ export default function Products() {
 
   // --- ACTION HANDLERS ---
   const handleEditProduct = (productId) => {
-    // console.log("Navigate to edit screen for product:", productId);
-    navigate(`/products/edit/${productId}`); // We will build this page later!
+    navigate(`/products/edit/${productId}`);
   };
 
   const confirmDeleteProduct = (product) => {
@@ -136,6 +135,7 @@ export default function Products() {
       name: `SKU: ${variant.sku}`,
     });
   };
+
   const executeDelete = async () => {
     setIsDeleting(true);
     setDeleteError(null);
@@ -230,153 +230,176 @@ export default function Products() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
-                <React.Fragment key={product.id}>
-                  {/* PARENT ROW */}
-                  <tr
+              {/* SAFELY CHECK ARRAY STATUS */}
+              {!Array.isArray(products) || products.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
                     style={{
-                      ...styles.tr,
-                      ...(expandedRowId === product.id
-                        ? styles.trExpanded
-                        : {}),
+                      textAlign: "center",
+                      padding: "30px",
+                      color: "#64748b",
                     }}
-                    onClick={() => toggleRow(product.id)}
                   >
-                    <td style={styles.td}>
-                      <strong style={{ color: "#0f172a", fontSize: "15px" }}>
-                        {product.name}
-                      </strong>
-                    </td>
-                    <td style={styles.td}>{product.brand_name || "—"}</td>
-                    <td style={styles.td}>{product.category_name || "—"}</td>
-                    <td style={styles.td}>
-                      <span style={styles.variantBadge}>
-                        {product.variants.length}
-                      </span>
-                    </td>
+                    No product data available.
+                  </td>
+                </tr>
+              ) : (
+                products.map((product) => (
+                  <React.Fragment key={product.id}>
+                    {/* PARENT ROW */}
+                    <tr
+                      style={{
+                        ...styles.tr,
+                        ...(expandedRowId === product.id
+                          ? styles.trExpanded
+                          : {}),
+                      }}
+                      onClick={() => toggleRow(product.id)}
+                    >
+                      <td style={styles.td}>
+                        <strong style={{ color: "#0f172a", fontSize: "15px" }}>
+                          {product.name}
+                        </strong>
+                      </td>
+                      <td style={styles.td}>{product.brand_name || "—"}</td>
+                      <td style={styles.td}>{product.category_name || "—"}</td>
+                      <td style={styles.td}>
+                        <span style={styles.variantBadge}>
+                          {product.variants?.length || 0}
+                        </span>
+                      </td>
 
-                    {/* UPDATED: PARENT ACTIONS */}
-                    <td style={{ ...styles.td, textAlign: "center" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: "16px",
-                        }}
-                      >
-                        <ActionButtons
-                          itemName="product"
-                          onEdit={() => handleEditProduct(product.id)}
-                          onDelete={() => confirmDeleteProduct(product)}
-                        />
-                        <button style={styles.expandBtn}>
-                          {expandedRowId === product.id ? (
-                            <ChevronUp size={20} />
-                          ) : (
-                            <ChevronDown size={20} />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* NESTED VARIANTS ROW */}
-                  {expandedRowId === product.id && (
-                    <tr>
-                      <td colSpan="5" style={styles.nestedTd}>
-                        <div style={styles.nestedContainer}>
-                          {product.variants.length === 0 ? (
-                            <div style={styles.noVariants}>
-                              No variants available.
-                            </div>
-                          ) : (
-                            <table style={styles.nestedTable}>
-                              <thead>
-                                <tr>
-                                  <th style={styles.nestedTh}>SKU</th>
-                                  <th style={styles.nestedTh}>Color</th>
-                                  <th style={styles.nestedTh}>Size</th>
-                                  <th style={styles.nestedTh}>Wholesale</th>
-                                  <th style={styles.nestedTh}>Retail</th>
-                                  {/* UPDATED: NESTED HEADER */}
-                                  <th
-                                    style={{
-                                      ...styles.nestedTh,
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    Actions
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {product.variants.map((variant) => (
-                                  <tr key={variant.id} style={styles.nestedTr}>
-                                    <td
-                                      style={{
-                                        ...styles.nestedTdCell,
-                                        fontFamily: "monospace",
-                                        color: "#475569",
-                                      }}
-                                    >
-                                      {variant.sku}
-                                    </td>
-                                    <td style={styles.nestedTdCell}>
-                                      {variant.color}
-                                    </td>
-                                    <td style={styles.nestedTdCell}>
-                                      {variant.size}
-                                    </td>
-                                    <td
-                                      style={{
-                                        ...styles.nestedTdCell,
-                                        color: "#2563eb",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      $
-                                      {Number(variant.wholesale_price).toFixed(
-                                        2,
-                                      )}
-                                    </td>
-                                    <td
-                                      style={{
-                                        ...styles.nestedTdCell,
-                                        color: "#16a34a",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      ${Number(variant.retail_price).toFixed(2)}
-                                    </td>
-                                    {/* UPDATED: NESTED ACTIONS */}
-                                    <td
-                                      style={{
-                                        ...styles.nestedTdCell,
-                                        textAlign: "center",
-                                      }}
-                                    >
-                                      <ActionButtons
-                                        itemName="variant"
-                                        onEdit={() =>
-                                          handleEditVariantClick(variant)
-                                        }
-                                        onDelete={() =>
-                                          confirmDeleteVariant(variant)
-                                        }
-                                      />
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
+                      {/* UPDATED: PARENT ACTIONS */}
+                      <td style={{ ...styles.td, textAlign: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: "16px",
+                          }}
+                        >
+                          <ActionButtons
+                            itemName="product"
+                            onEdit={() => handleEditProduct(product.id)}
+                            onDelete={() => confirmDeleteProduct(product)}
+                          />
+                          <button style={styles.expandBtn}>
+                            {expandedRowId === product.id ? (
+                              <ChevronUp size={20} />
+                            ) : (
+                              <ChevronDown size={20} />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
+
+                    {/* NESTED VARIANTS ROW */}
+                    {expandedRowId === product.id && (
+                      <tr>
+                        <td colSpan="5" style={styles.nestedTd}>
+                          <div style={styles.nestedContainer}>
+                            {!product.variants ||
+                            product.variants.length === 0 ? (
+                              <div style={styles.noVariants}>
+                                No variants available.
+                              </div>
+                            ) : (
+                              <table style={styles.nestedTable}>
+                                <thead>
+                                  <tr>
+                                    <th style={styles.nestedTh}>SKU</th>
+                                    <th style={styles.nestedTh}>Color</th>
+                                    <th style={styles.nestedTh}>Size</th>
+                                    <th style={styles.nestedTh}>Wholesale</th>
+                                    <th style={styles.nestedTh}>Retail</th>
+                                    {/* UPDATED: NESTED HEADER */}
+                                    <th
+                                      style={{
+                                        ...styles.nestedTh,
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      Actions
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {product.variants.map((variant) => (
+                                    <tr
+                                      key={variant.id}
+                                      style={styles.nestedTr}
+                                    >
+                                      <td
+                                        style={{
+                                          ...styles.nestedTdCell,
+                                          fontFamily: "monospace",
+                                          color: "#475569",
+                                        }}
+                                      >
+                                        {variant.sku}
+                                      </td>
+                                      <td style={styles.nestedTdCell}>
+                                        {variant.color}
+                                      </td>
+                                      <td style={styles.nestedTdCell}>
+                                        {variant.size}
+                                      </td>
+                                      <td
+                                        style={{
+                                          ...styles.nestedTdCell,
+                                          color: "#2563eb",
+                                          fontWeight: "600",
+                                        }}
+                                      >
+                                        $
+                                        {Number(
+                                          variant.wholesale_price,
+                                        ).toFixed(2)}
+                                      </td>
+                                      <td
+                                        style={{
+                                          ...styles.nestedTdCell,
+                                          color: "#16a34a",
+                                          fontWeight: "600",
+                                        }}
+                                      >
+                                        $
+                                        {Number(variant.retail_price).toFixed(
+                                          2,
+                                        )}
+                                      </td>
+                                      {/* UPDATED: NESTED ACTIONS */}
+                                      <td
+                                        style={{
+                                          ...styles.nestedTdCell,
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        <ActionButtons
+                                          itemName="variant"
+                                          onEdit={() =>
+                                            handleEditVariantClick(variant)
+                                          }
+                                          onDelete={() =>
+                                            confirmDeleteVariant(variant)
+                                          }
+                                        />
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -408,6 +431,7 @@ export default function Products() {
           </button>
         </div>
       )}
+
       {/* DELETE CONFIRMATION MODAL */}
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
@@ -566,8 +590,6 @@ const styles = {
     borderLeft: "1px solid #cbd5e1",
     padding: "0 20px",
     alignSelf: "stretch",
-    fontWeight: "600",
-
     fontWeight: "600",
     color: "#334155",
     cursor: "pointer",

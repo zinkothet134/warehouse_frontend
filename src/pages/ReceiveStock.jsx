@@ -27,7 +27,6 @@ export default function ReceiveStock() {
           api.get("inventory/locations/"),
         ]);
 
-        // CRITICAL FIX: Extract the .results array from the paginated response!
         setVariants(variantsRes.data.results || variantsRes.data);
         setLocations(locationsRes.data.results || locationsRes.data);
       } catch (err) {
@@ -47,9 +46,9 @@ export default function ReceiveStock() {
     });
   };
 
-  const selectedVariant = variants.find(
-    (v) => String(v.id) === String(formData.variant),
-  );
+  const selectedVariant = Array.isArray(variants)
+    ? variants.find((v) => String(v.id) === String(formData.variant))
+    : "";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,29 +74,24 @@ export default function ReceiveStock() {
   return (
     <div style={styles.page}>
       {/* HEADER */}
-
       <div style={styles.header}>
         <div>
           <h1 style={styles.pageTitle}>Receive New Shipment</h1>
-
           <p style={styles.subtitle}>Add inventory into warehouse stock</p>
         </div>
       </div>
 
       {/* ERROR */}
-
       {error && <div style={styles.errorCard}>⚠️ {error}</div>}
 
       <form onSubmit={handleSubmit} style={styles.formCard}>
         {/* SKU */}
-
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Product Information</h3>
 
           <div style={styles.grid}>
             <div>
               <label style={styles.label}>Product Variant</label>
-
               <select
                 name="variant"
                 value={formData.variant}
@@ -106,18 +100,22 @@ export default function ReceiveStock() {
                 style={styles.input}
               >
                 <option value="">Select SKU</option>
-
-                {variants.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.product_name || v.product?.name || "Product"} — {v.sku}
+                {!Array.isArray(variants) || variants.length === 0 ? (
+                  <option value="" disabled>
+                    No variants available.
                   </option>
-                ))}
+                ) : (
+                  variants.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.product_name || v.product?.name || "Product"} — {v.sku}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
             <div>
               <label style={styles.label}>Warehouse Location</label>
-
               <select
                 name="location"
                 value={formData.location}
@@ -126,22 +124,25 @@ export default function ReceiveStock() {
                 style={styles.input}
               >
                 <option value="">Select Location</option>
-
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name}
-                    {loc.zone ? ` (${loc.zone})` : ""}
+                {!Array.isArray(locations) || locations.length === 0 ? (
+                  <option value="" disabled>
+                    No locations available.
                   </option>
-                ))}
+                ) : (
+                  locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                      {loc.zone ? ` (${loc.zone})` : ""}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
 
           {/* SKU Preview */}
-
           {selectedVariant && (
             <div style={styles.previewCard}>
-              {/* 👇 Added Product Name as the bold title of the preview card */}
               <div style={styles.previewTitle}>
                 {selectedVariant.product_name ||
                   selectedVariant.product?.name ||
@@ -149,22 +150,41 @@ export default function ReceiveStock() {
               </div>
               <div style={styles.previewSku}>{selectedVariant.sku}</div>
 
-              <div>Color: {selectedVariant.color || "N/A"}</div>
+              {/* Dynamic Attribute Display */}
+              <div style={styles.attributeContainer}>
+                {selectedVariant.attribute_values &&
+                Array.isArray(selectedVariant.attribute_values) ? (
+                  selectedVariant.attribute_values.map((attr, index) => {
+                    // Fallbacks in case the DRF serializer names the fields slightly differently
+                    const attrName =
+                      attr.attribute?.name ||
+                      attr.attribute_name ||
+                      "Attribute";
+                    const valName = attr.value || attr.value_name || "Unknown";
 
-              <div>Size: {selectedVariant.size || "N/A"}</div>
+                    return (
+                      <span key={index} style={styles.attributeBadge}>
+                        <strong>{attrName}:</strong> {valName}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span style={{ fontSize: "13px", color: "#64748b" }}>
+                    See SKU for variant details
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* STOCK */}
-
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Stock Information</h3>
 
           <div style={styles.grid}>
             <div>
               <label style={styles.label}>Quantity Received</label>
-
               <input
                 type="number"
                 min="1"
@@ -178,7 +198,6 @@ export default function ReceiveStock() {
 
             <div>
               <label style={styles.label}>Low Stock Alert</label>
-
               <input
                 type="number"
                 min="0"
@@ -193,7 +212,6 @@ export default function ReceiveStock() {
         </div>
 
         {/* ACTIONS */}
-
         <div style={styles.actions}>
           <button
             type="button"
@@ -216,129 +234,136 @@ const styles = {
   page: {
     maxWidth: "1000px",
     margin: "0 auto",
-    padding: "24px",
+    padding: "32px 24px",
     background: "#f8fafc",
     minHeight: "100vh",
+    fontFamily: "system-ui, -apple-system, sans-serif",
   },
-
   center: {
     textAlign: "center",
     padding: "60px",
+    color: "#64748b",
   },
-
   header: {
-    marginBottom: "24px",
+    marginBottom: "32px",
   },
-
   pageTitle: {
     margin: 0,
-    fontSize: "32px",
+    fontSize: "28px",
     fontWeight: 700,
+    color: "#0f172a",
+    letterSpacing: "-0.5px",
   },
-
   subtitle: {
     color: "#64748b",
     marginTop: "6px",
+    fontSize: "15px",
   },
-
   formCard: {
     background: "#fff",
-    borderRadius: "20px",
-    padding: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,.08)",
-  },
-
-  errorCard: {
-    background: "#fee2e2",
-    color: "#dc2626",
-    padding: "14px",
     borderRadius: "12px",
-    marginBottom: "16px",
-    fontWeight: "600",
+    padding: "24px",
+    boxShadow: "0 1px 3px rgba(0,0,0,.05)",
+    border: "1px solid #e2e8f0",
   },
-
+  errorCard: {
+    background: "#fef2f2",
+    color: "#b91c1c",
+    padding: "14px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    fontWeight: "500",
+    border: "1px solid #f87171",
+  },
   section: {
     marginBottom: "28px",
   },
-
   sectionTitle: {
     marginBottom: "16px",
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "600",
+    color: "#1e293b",
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
     gap: "16px",
   },
-
   label: {
     display: "block",
-    marginBottom: "8px",
+    marginBottom: "6px",
+    fontSize: "14px",
     fontWeight: "500",
-    color: "#334155",
+    color: "#475569",
   },
-
   input: {
     width: "100%",
-    padding: "12px 14px",
-    borderRadius: "10px",
+    padding: "10px 14px",
+    borderRadius: "8px",
     border: "1px solid #cbd5e1",
     boxSizing: "border-box",
     fontSize: "14px",
+    color: "#334155",
+    outline: "none",
+    background: "#ffffff",
   },
-
   previewCard: {
     marginTop: "16px",
     padding: "16px",
-    background: "#eff6ff",
-    borderRadius: "12px",
-    border: "1px solid #bfdbfe",
+    background: "#f8fafc",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
   },
-  // 👇 ADD THIS NEW STYLE
   previewTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
+    fontSize: "15px",
+    fontWeight: "600",
     color: "#0f172a",
     marginBottom: "4px",
   },
-
   previewSku: {
     fontFamily: "monospace",
-    fontWeight: "700",
-    color: "#2563eb",
-    marginBottom: "8px",
+    fontWeight: "600",
+    color: "#3b82f6",
+    marginBottom: "12px",
+    fontSize: "14px",
   },
-
+  attributeContainer: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  attributeBadge: {
+    background: "#e2e8f0",
+    color: "#334155",
+    padding: "4px 10px",
+    borderRadius: "999px",
+    fontSize: "13px",
+  },
   actions: {
     display: "flex",
+    justifyContent: "flex-end",
     gap: "12px",
     flexWrap: "wrap",
     marginTop: "20px",
   },
-
   cancelBtn: {
-    flex: 1,
-    minWidth: "140px",
-    padding: "12px",
-    borderRadius: "10px",
+    padding: "10px 20px",
+    borderRadius: "8px",
     border: "1px solid #d1d5db",
     background: "#fff",
     cursor: "pointer",
-    fontWeight: "600",
-    color: "red",
+    fontWeight: "500",
+    color: "#64748b",
+    fontSize: "14px",
   },
-
   submitBtn: {
-    flex: 2,
-    minWidth: "200px",
-    padding: "12px",
-    borderRadius: "10px",
+    padding: "10px 24px",
+    borderRadius: "8px",
     border: "none",
     background: "#2563eb",
     color: "#fff",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
 };

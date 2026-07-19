@@ -139,52 +139,69 @@ export default function OrderHistory() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} style={styles.tr}>
-                  <td style={styles.td}>
-                    <div style={styles.primaryText}>
-                      <Receipt size={16} color="#64748b" />
-                      REC-{order.id.toString().padStart(6, "0")}
-                    </div>
-                  </td>
-                  <td style={styles.td}>
-                    {new Date(order.created_at).toLocaleString()}
-                  </td>
-                  <td style={styles.td}>
-                    <strong style={{ color: "#0f172a" }}>
-                      {order.customer_name || "Walk-in Customer"}
-                    </strong>
-                  </td>
-                  <td style={styles.td}>{order.payment_method}</td>
-                  <td style={styles.td}>
-                    <strong style={{ color: "#2563eb", fontSize: "15px" }}>
-                      ${Number(order.total_amount).toFixed(2)}
-                    </strong>
-                  </td>
-                  <td style={styles.td}>
-                    <span
-                      style={{
-                        ...styles.badge,
-                        backgroundColor: getStatusColor(
-                          order.status || "COMPLETED",
-                        ).bg,
-                        color: getStatusColor(order.status || "COMPLETED").text,
-                        border: `1px solid ${getStatusColor(order.status || "COMPLETED").border}`,
-                      }}
-                    >
-                      {order.status || "COMPLETED"}
-                    </span>
-                  </td>
-                  <td style={{ ...styles.td, textAlign: "right" }}>
-                    <button
-                      style={styles.actionBtn}
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <Eye size={16} /> View
-                    </button>
+              {/* 👇 Added the array safety check here */}
+              {!Array.isArray(orders) || orders.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    style={{
+                      textAlign: "center",
+                      padding: "30px",
+                      color: "#64748b",
+                    }}
+                  >
+                    No orders found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                orders.map((order) => (
+                  <tr key={order.id} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={styles.primaryText}>
+                        <Receipt size={16} color="#64748b" />
+                        REC-{order.id.toString().padStart(6, "0")}
+                      </div>
+                    </td>
+                    <td style={styles.td}>
+                      {new Date(order.created_at).toLocaleString()}
+                    </td>
+                    <td style={styles.td}>
+                      <strong style={{ color: "#0f172a" }}>
+                        {order.customer_name || "Walk-in Customer"}
+                      </strong>
+                    </td>
+                    <td style={styles.td}>{order.payment_method}</td>
+                    <td style={styles.td}>
+                      <strong style={{ color: "#2563eb", fontSize: "15px" }}>
+                        ${Number(order.total_amount).toFixed(2)}
+                      </strong>
+                    </td>
+                    <td style={styles.td}>
+                      <span
+                        style={{
+                          ...styles.badge,
+                          backgroundColor: getStatusColor(
+                            order.status || "COMPLETED",
+                          ).bg,
+                          color: getStatusColor(order.status || "COMPLETED")
+                            .text,
+                          border: `1px solid ${getStatusColor(order.status || "COMPLETED").border}`,
+                        }}
+                      >
+                        {order.status || "COMPLETED"}
+                      </span>
+                    </td>
+                    <td style={{ ...styles.td, textAlign: "right" }}>
+                      <button
+                        style={styles.actionBtn}
+                        onClick={() => setSelectedOrder(order)}
+                      >
+                        <Eye size={16} /> View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
