@@ -1,15 +1,38 @@
 import axios from "axios";
 
-// --- 1. DYNAMIC BASE URL SETUP ---
-// We dynamically capture the current hostname (e.g., 'store_a.localhost')
-// so Axios automatically sends requests to the correct tenant's backend.
+// --- 1. EXTRACT TENANT PREFIX ---
+// Extracts the subdomain from the frontend URL to use for the backend URL
+const getTenantPrefix = () => {
+  const host = window.location.hostname;
+
+  // Localhost handling (e.g., mandalay.localhost)
+  if (host.includes("localhost") || host.includes("127.0.0.1")) {
+    const parts = host.split(".");
+    return parts.length > 1 && parts[0] !== "www" ? parts[0] : "api";
+  }
+
+  // Production handling (e.g., mandalay.yourfrontend.com)
+  const parts = host.split(".");
+  if (parts.length >= 3 && parts[0] !== "www") {
+    return parts[0];
+  }
+
+  // Fallback to the main/public API
+  return "api";
+};
+
+// --- 2. DYNAMIC BASE URL SETUP ---
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
+  // Allow local development override (e.g., pointing to localhost:8000)
+  if (import.meta.env.DEV && import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
-  // Fallback for local development: map the frontend's current subdomain to the backend port
-  const host = window.location.hostname;
-  return `http://${host}:8000/api/`;
+
+  const prefix = getTenantPrefix();
+
+  // Dynamically constructs:
+  // https://mandalay.chuefamily.online/api/ OR https://api.chuefamily.online/api/
+  return `https://${prefix}.chuefamily.online/api/`;
 };
 
 const API_BASE_URL = getBaseUrl();
@@ -18,14 +41,14 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// --- 2. REQUEST INTERCEPTOR ---
+// --- 3. REQUEST INTERCEPTOR ---
 api.interceptors.request.use(
   (config) => {
-    // Look for the token in local storage
     const token = localStorage.getItem("access");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // No custom tenant header needed; Django reads the Host from the URL
     return config;
   },
   (error) => {
@@ -33,57 +56,47 @@ api.interceptors.request.use(
   },
 );
 
-// --- 3. RESPONSE INTERCEPTOR ---
+// --- 4. RESPONSE INTERCEPTOR ---
 api.interceptors.response.use(
   (response) => {
-    // If the request succeeds normally, just pass it through
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
 
-    // If the error is 401 (Unauthorized) AND we haven't tried refreshing yet
-    // AND the user isn't currently trying to log in...
     if (
       error.response &&
       error.response.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.includes("login")
     ) {
-      originalRequest._retry = true; // Set a flag so we don't get stuck in an infinite loop
+      originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem("refresh");
 
       if (refreshToken) {
         try {
-          // --- FIX APPLIED HERE ---
-          // Dynamically use API_BASE_URL so the refresh request goes to the specific
-          // tenant (e.g., http://store_a.localhost:8000/api/accounts/token/refresh/)
+          // The refresh request will automatically go to the correct
+          // tenant domain because API_BASE_URL is dynamically built
           const response = await axios.post(
             `${API_BASE_URL}accounts/token/refresh/`,
-            {
-              refresh: refreshToken,
-            },
+            { refresh: refreshToken },
           );
 
-          // Save the new token to localStorage
           localStorage.setItem("access", response.data.access);
 
-          // Update the failed request with the new token and TRY AGAIN
           originalRequest.headers.Authorization = `Bearer ${response.data.access}`;
           return api(originalRequest);
         } catch (refreshError) {
-          // If the refresh token is ALSO expired, force a hard logout
           console.error("Session expired. Please log in again.");
           localStorage.removeItem("access");
           localStorage.removeItem("refresh");
-          window.location.href = "/login"; // Redirect to login page
+          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       }
     }
 
-    // If it was a different error (like 404 Not Found), just reject it normally
     return Promise.reject(error);
   },
 );
