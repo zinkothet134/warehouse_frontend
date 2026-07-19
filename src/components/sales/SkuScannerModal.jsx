@@ -658,7 +658,7 @@ const styles = {
     border: "none",
     borderRadius: "10px",
     background: "#e2e8f0",
-    color: "#dae0e7",
+    color: "#3b444e",
     cursor: "pointer",
   },
   quantityInput: {
@@ -667,7 +667,7 @@ const styles = {
     boxSizing: "border-box",
     border: "1px solid #cbd5e1",
     borderRadius: "10px",
-    color: "#0f172a", // Fixed the color to ensure it's visible on a light background
+    color: "#dbdfe8", // Fixed the color to ensure it's visible on a light background
     fontWeight: "800",
     textAlign: "center",
   },
