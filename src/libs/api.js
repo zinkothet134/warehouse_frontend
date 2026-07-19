@@ -11,10 +11,10 @@ const getTenantPrefix = () => {
     return parts.length > 1 && parts[0] !== "www" ? parts[0] : "api";
   }
 
-  // Production handling (e.g., mandalay.yourfrontend.com)
+  // Production handling (e.g., mandalay.chuefamily.online)
   const parts = host.split(".");
   if (parts.length >= 3 && parts[0] !== "www") {
-    return parts[0];
+    return parts[0]; // Returns "mandalay"
   }
 
   // Fallback to the main/public API
@@ -23,16 +23,21 @@ const getTenantPrefix = () => {
 
 // --- 2. DYNAMIC BASE URL SETUP ---
 const getBaseUrl = () => {
-  // Allow local development override (e.g., pointing to localhost:8000)
+  // Allow local development override (e.g., pointing to localhost:8000 via VITE_API_BASE_URL)
   if (import.meta.env.DEV && import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
   const prefix = getTenantPrefix();
 
+  // FORMATTING THE NEW SUBDOMAIN ARCHITECTURE
+  // If the prefix is "api" (public tenant), leave it as "api"
+  // If it is a specific tenant (like "mandalay"), format it as "api-mandalay"
+  const backendSubdomain = prefix === "api" ? "api" : `api-${prefix}`;
+
   // Dynamically constructs:
-  // https://mandalay.chuefamily.online/api/ OR https://api.chuefamily.online/api/
-  return `https://${prefix}.chuefamily.online/api/`;
+  // https://api-mandalay.chuefamily.online/api/ OR https://api.chuefamily.online/api/
+  return `https://${backendSubdomain}.chuefamily.online/api/`;
 };
 
 const API_BASE_URL = getBaseUrl();
@@ -48,7 +53,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // No custom tenant header needed; Django reads the Host from the URL
+    // No custom tenant header needed; Django-tenants reads the Host from the URL we just constructed
     return config;
   },
   (error) => {
@@ -77,7 +82,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           // The refresh request will automatically go to the correct
-          // tenant domain because API_BASE_URL is dynamically built
+          // tenant domain because API_BASE_URL is dynamically built with "api-tenant"
           const response = await axios.post(
             `${API_BASE_URL}accounts/token/refresh/`,
             { refresh: refreshToken },
