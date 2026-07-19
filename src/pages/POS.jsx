@@ -4,7 +4,6 @@ import { Search, Package, AlertCircle } from "lucide-react";
 import "../assets/common/POS.css";
 import CutomerInfoModal from "../components/sales/CustomerInfoModal";
 import Toast from "../components/common/Toast";
-
 import SkuScannerModal from "../components/sales/SkuScannerModal";
 
 export default function POS() {
@@ -37,10 +36,76 @@ export default function POS() {
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  // Helper function to format prices cleanly
+  const formatPrice = (price) => {
+    return Number(price).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   // Helper function to trigger the toast
   const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
+
+  // --- DYNAMIC VARIANT HELPERS --- //
+  // Adjust 'attributes' below if your API uses a different field name for the dynamic data
+
+  const getCartDisplayInfo = (variant) => {
+    if (!variant.attributes) return "Standard";
+
+    // If attributes is a JSON Object: { "Color": "Red", "Size": "XL" }
+    if (
+      typeof variant.attributes === "object" &&
+      !Array.isArray(variant.attributes)
+    ) {
+      return Object.entries(variant.attributes)
+        .map(([key, value]) =>
+          key.toLowerCase() === "size" ? `Size ${value}` : value,
+        )
+        .join(" - ");
+    }
+    // If attributes is an Array: [{name: "Color", value: "Red"}, {name: "Size", value: "XL"}]
+    if (Array.isArray(variant.attributes)) {
+      return variant.attributes
+        .map((attr) =>
+          attr.name?.toLowerCase() === "size"
+            ? `Size ${attr.value}`
+            : attr.value,
+        )
+        .join(" - ");
+    }
+    return "Standard";
+  };
+
+  const renderVariantBadges = (variant) => {
+    if (!variant.attributes) return null;
+
+    // If attributes is a JSON Object
+    if (
+      typeof variant.attributes === "object" &&
+      !Array.isArray(variant.attributes)
+    ) {
+      return Object.entries(variant.attributes).map(([key, value]) => (
+        <span key={key} style={styles.variantBadge}>
+          {key.toLowerCase() === "size" ? `Size ${value}` : value}
+        </span>
+      ));
+    }
+    // If attributes is an Array
+    if (Array.isArray(variant.attributes)) {
+      return variant.attributes.map((attr, index) => (
+        <span key={index} style={styles.variantBadge}>
+          {attr.name?.toLowerCase() === "size"
+            ? `Size ${attr.value}`
+            : attr.value}
+        </span>
+      ));
+    }
+    return null;
+  };
+  // ------------------------------- //
 
   const executeSearch = () => {
     setActiveSearch(search);
@@ -85,9 +150,10 @@ export default function POS() {
         : variant.retail_price,
     );
 
+    const displayInfo = getCartDisplayInfo(variant);
+
     setCart((prev) => {
       const existing = prev.find((item) => item.variant === variant.id);
-
       if (existing) {
         return prev.map((item) =>
           item.variant === variant.id
@@ -100,19 +166,12 @@ export default function POS() {
         ...prev,
         {
           variant: variant.id,
-
           sku: variant.sku,
-
           name: variant.product_name,
-
-          display_info: `${variant.color} - Size ${variant.size}`,
-
+          display_info: displayInfo,
           retail_price: Number(variant.retail_price),
-
           wholesale_price: Number(variant.wholesale_price),
-
           price_at_sale: selectedPrice,
-
           quantity,
         },
       ];
@@ -124,6 +183,8 @@ export default function POS() {
   };
 
   const addToCart = (variant) => {
+    const displayInfo = getCartDisplayInfo(variant);
+
     setCart((prev) => {
       const existing = prev.find((item) => item.variant === variant.id);
       if (existing) {
@@ -137,22 +198,15 @@ export default function POS() {
         ...prev,
         {
           variant: variant.id,
-
           sku: variant.sku,
-
           name: variant.product_name,
-
-          display_info: `${variant.color} - Size ${variant.size}`,
-
+          display_info: displayInfo,
           retail_price: Number(variant.retail_price),
-
           wholesale_price: Number(variant.wholesale_price),
-
           price_at_sale:
             saleMode === "WHOLESALE"
               ? Number(variant.wholesale_price)
               : Number(variant.retail_price),
-
           quantity: 1,
         },
       ];
@@ -178,13 +232,13 @@ export default function POS() {
     (sum, item) => sum + item.quantity * item.price_at_sale,
     0,
   );
+
   const changeSaleMode = (nextSaleMode) => {
     if (nextSaleMode === saleMode) return;
 
     setCart((prev) =>
       prev.map((item) => ({
         ...item,
-
         price_at_sale: Number(
           nextSaleMode === "WHOLESALE"
             ? item.wholesale_price
@@ -192,12 +246,9 @@ export default function POS() {
         ),
       })),
     );
-
     setSaleMode(nextSaleMode);
-
     showToast(
       `Cart prices changed to ${nextSaleMode.toLowerCase()} prices.`,
-
       "success",
     );
   };
@@ -210,22 +261,14 @@ export default function POS() {
     try {
       await api.post("sales/orders/", {
         customer_name: customerName,
-
         customer_email: customerDetails.email,
-
         customer_phone: customerDetails.phone,
-
         customer_address: customerDetails.address,
-
-        order_type: saleMode, // RETAIL or WHOLESALE
-
+        order_type: saleMode,
         payment_method: paymentMethod,
-
         items: cart.map((item) => ({
           variant: item.variant,
-
           quantity: item.quantity,
-
           price_at_sale: item.price_at_sale,
         })),
       });
@@ -252,7 +295,6 @@ export default function POS() {
     <div style={styles.page}>
       {/* PRODUCTS PANEL */}
       <div style={styles.productsPanel}>
-        {/* HEADER */}
         <div style={styles.header}>
           <div>
             <h1 style={styles.title}>Point of Sale</h1>
@@ -287,7 +329,6 @@ export default function POS() {
           </div>
         </div>
 
-        {/* SEARCH */}
         <div style={styles.searchAndScanRow}>
           <div style={styles.searchWrapper}>
             <Search size={18} color="#64748b" style={{ marginLeft: "12px" }} />
@@ -317,7 +358,6 @@ export default function POS() {
           </button>
         </div>
 
-        {/* PRODUCT GRID */}
         <div
           style={{
             opacity: loading ? 0.5 : 1,
@@ -343,7 +383,6 @@ export default function POS() {
             </div>
           ) : (
             <div style={styles.productGrid}>
-              {/* 👇 Added the array safety check here */}
               {!Array.isArray(variants) || variants.length === 0 ? (
                 <div
                   style={{
@@ -359,6 +398,10 @@ export default function POS() {
                 variants.map((v) => {
                   const stockLevel = v.stock || 0;
                   const isOutOfStock = stockLevel <= 0;
+                  const activePrice =
+                    saleMode === "WHOLESALE"
+                      ? v.wholesale_price
+                      : v.retail_price;
 
                   return (
                     <div
@@ -380,19 +423,14 @@ export default function POS() {
                         <div style={styles.skuText}>{v.sku}</div>
                       </div>
 
+                      {/* 👇 DYNAMIC VARIANTS RENDERED HERE 👇 */}
                       <div style={styles.badgeRow}>
-                        <span style={styles.variantBadge}>{v.color}</span>
-                        <span style={styles.variantBadge}>Size {v.size}</span>
+                        {renderVariantBadges(v)}
                       </div>
 
                       <div style={styles.cardFooter}>
                         <div style={styles.price}>
-                          $
-                          {Number(
-                            saleMode === "WHOLESALE"
-                              ? v.wholesale_price
-                              : v.retail_price,
-                          ).toFixed(2)}
+                          ${formatPrice(activePrice)}
                         </div>
 
                         <div
@@ -422,7 +460,6 @@ export default function POS() {
             </div>
           )}
 
-          {/* 🌟 RESTORED PAGINATION CONTROLS 🌟 */}
           <div style={styles.paginationControls}>
             <button
               style={{
@@ -471,7 +508,7 @@ export default function POS() {
                   </div>
                   <div style={styles.cartUnitPrice}>
                     {saleMode === "WHOLESALE" ? "Wholesale" : "Retail"} · $
-                    {Number(item.price_at_sale).toFixed(2)} each
+                    {formatPrice(item.price_at_sale)} each
                   </div>
                 </div>
                 <div style={styles.qtyBox}>
@@ -497,7 +534,7 @@ export default function POS() {
         <div style={styles.checkout}>
           <div style={styles.totalRow}>
             <span>Total</span>
-            <span style={{ color: "#2563eb" }}>${cartTotal.toFixed(2)}</span>
+            <span style={{ color: "#2563eb" }}>${formatPrice(cartTotal)}</span>
           </div>
 
           <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
@@ -547,7 +584,6 @@ export default function POS() {
         </div>
       </div>
 
-      {/* CUSTOMER INFO MODAL */}
       <CutomerInfoModal
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
@@ -561,7 +597,6 @@ export default function POS() {
           });
         }}
       />
-      {/* SUCCESS/ERROR TOAST */}
       <Toast
         message={toast.message}
         type={toast.type}
@@ -587,8 +622,6 @@ const styles = {
     minHeight: "100vh",
     alignItems: "flex-start",
   },
-
-  // 🌟 EXACT 1/3 LAYOUT FOR CART
   productsPanel: {
     display: "flex",
     flexDirection: "column",
@@ -598,11 +631,10 @@ const styles = {
     height: "calc(100vh - 48px)",
     boxSizing: "border-box",
   },
-
   cartPanel: {
-    flex: "1 1 320px", // Flexibly aims for ~1/3 width, but grows/shrinks as needed
+    flex: "1 1 320px",
     minWidth: "320px",
-    maxWidth: "100%", // Ensures it scales nicely if it wraps to the next line on mobile
+    maxWidth: "100%",
     background: "#fff",
     borderRadius: "20px",
     padding: "24px",
@@ -613,7 +645,6 @@ const styles = {
     position: "sticky",
     top: "24px",
   },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
@@ -715,15 +746,12 @@ const styles = {
     cursor: "pointer",
     boxShadow: "0 6px 16px rgba(37, 99, 235, 0.22)",
   },
-
-  // for search empty state
-  // Add these alongside your other productGrid styles
   emptyState: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1, // Stretches to fill the empty space
+    flex: 1,
     padding: "40px 20px",
     background: "#fff",
     borderRadius: "16px",
@@ -737,12 +765,7 @@ const styles = {
     fontWeight: "700",
     color: "#0f172a",
   },
-  emptyStateText: {
-    margin: 0,
-    fontSize: "14px",
-    color: "#64748b",
-  },
-
+  emptyStateText: { margin: 0, fontSize: "14px", color: "#64748b" },
   productGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
@@ -773,7 +796,6 @@ const styles = {
     fontFamily: "monospace",
     fontWeight: "600",
   },
-
   badgeRow: { display: "flex", gap: "6px", flexWrap: "wrap" },
   variantBadge: {
     background: "#f1f5f9",
@@ -783,11 +805,12 @@ const styles = {
     fontSize: "12px",
     fontWeight: "600",
   },
-
   cardFooter: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px",
     marginTop: "auto",
     paddingTop: "8px",
   },
@@ -797,7 +820,6 @@ const styles = {
     color: "#2563eb",
     letterSpacing: "-0.5px",
   },
-
   stockGood: {
     display: "flex",
     alignItems: "center",
@@ -831,17 +853,13 @@ const styles = {
     fontSize: "12px",
     fontWeight: "700",
   },
-
   cartTitle: {
     marginTop: 0,
     marginBottom: "20px",
     color: "#0f172a",
     fontSize: "20px",
   },
-  saleModeLabel: {
-    color: "#2563eb",
-    fontSize: "14px",
-  },
+  saleModeLabel: { color: "#2563eb", fontSize: "14px" },
   cartItems: { maxHeight: "420px", overflowY: "auto", paddingRight: "8px" },
   emptyCart: {
     textAlign: "center",
@@ -849,7 +867,6 @@ const styles = {
     padding: "40px 0",
     fontSize: "15px",
   },
-
   cartItem: {
     display: "flex",
     justifyContent: "space-between",
@@ -864,7 +881,6 @@ const styles = {
     marginBottom: "4px",
   },
   cartName: { color: "#64748b", fontSize: "13px" },
-
   qtyBox: { display: "flex", alignItems: "center", gap: "12px" },
   qtyBtn: {
     width: "32px",
@@ -887,7 +903,6 @@ const styles = {
     textAlign: "center",
     color: "#0f172a",
   },
-
   checkout: { marginTop: "24px", paddingTop: "24px" },
   totalRow: {
     display: "flex",
@@ -936,12 +951,11 @@ const styles = {
     color: "#64748b",
     fontWeight: "500",
   },
-
   paginationControls: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: "auto", // Pushes it to the bottom
+    marginTop: "auto",
     paddingTop: "16px",
     background: "#f8fafc",
   },
@@ -957,11 +971,8 @@ const styles = {
   pageIndicator: { fontWeight: "600", color: "#0f172a" },
   cartUnitPrice: {
     marginTop: "4px",
-
     color: "#2563eb",
-
     fontSize: "12px",
-
     fontWeight: "700",
   },
 };
