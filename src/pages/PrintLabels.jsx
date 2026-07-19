@@ -101,6 +101,60 @@ export default function PrintLabels() {
     return item ? item.quantity : 0;
   };
 
+  // --- DYNAMIC VARIANT HELPERS --- //
+  const getVariantDisplayInfo = (variant) => {
+    if (!variant.attributes) return "Standard";
+
+    if (
+      typeof variant.attributes === "object" &&
+      !Array.isArray(variant.attributes)
+    ) {
+      return Object.entries(variant.attributes)
+        .map(([key, value]) =>
+          key.toLowerCase() === "size" ? `Size ${value}` : value,
+        )
+        .join(" - ");
+    }
+
+    if (Array.isArray(variant.attributes)) {
+      return variant.attributes
+        .map((attr) =>
+          attr.name?.toLowerCase() === "size"
+            ? `Size ${attr.value}`
+            : attr.value,
+        )
+        .join(" - ");
+    }
+    return "Standard";
+  };
+
+  const renderVariantBadges = (variant) => {
+    if (!variant.attributes) return null;
+
+    if (
+      typeof variant.attributes === "object" &&
+      !Array.isArray(variant.attributes)
+    ) {
+      return Object.entries(variant.attributes).map(([key, value]) => (
+        <span key={key} style={styles.variantBadge}>
+          {key.toLowerCase() === "size" ? `Size ${value}` : value}
+        </span>
+      ));
+    }
+
+    if (Array.isArray(variant.attributes)) {
+      return variant.attributes.map((attr, index) => (
+        <span key={index} style={styles.variantBadge}>
+          {attr.name?.toLowerCase() === "size"
+            ? `Size ${attr.value}`
+            : attr.value}
+        </span>
+      ));
+    }
+    return null;
+  };
+  // ------------------------------- //
+
   return (
     <>
       {/* 🌟 PERFECT 3-COLUMN A4 PRINT CSS 🌟 */}
@@ -202,7 +256,6 @@ export default function PrintLabels() {
               </div>
             ) : (
               <div style={styles.productGrid}>
-                {/* 👇 Added the array safety check here */}
                 {!Array.isArray(variants) || variants.length === 0 ? (
                   <div
                     style={{
@@ -224,9 +277,9 @@ export default function PrintLabels() {
                           <div style={styles.skuText}>{v.sku}</div>
                         </div>
 
+                        {/* DYNAMIC VARIANTS RENDERED HERE */}
                         <div style={styles.badgeRow}>
-                          <span style={styles.variantBadge}>{v.color}</span>
-                          <span style={styles.variantBadge}>Size {v.size}</span>
+                          {renderVariantBadges(v)}
                         </div>
 
                         <div style={styles.cardFooter}>
@@ -286,6 +339,16 @@ export default function PrintLabels() {
                     <div style={styles.queueName}>
                       {item.variant.product_name}
                     </div>
+                    {/* Added Variant details to the Queue list for better visibility */}
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#94a3b8",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {getVariantDisplayInfo(item.variant)}
+                    </div>
                     <div style={styles.queueSku}>{item.variant.sku}</div>
                   </div>
 
@@ -337,15 +400,15 @@ export default function PrintLabels() {
         </div>
 
         {/* 🌟 THE HIDDEN PRINT AREA 🌟 */}
-        {/* Changed from style={{ display: "print-only" }} to className="print-only" */}
         <div id="print-area" className="print-only">
           {printQueue.map((item) => {
             const copies = Array.from({ length: item.quantity });
             return copies.map((_, index) => (
               <div key={`${item.variant.id}-${index}`}>
+                {/* Updated to print dynamic variants on the physical label */}
                 <PrintableQRCode
                   value={item.variant.sku}
-                  productName={`${item.variant.product_name} (${item.variant.color})`}
+                  productName={`${item.variant.product_name} (${getVariantDisplayInfo(item.variant)})`}
                 />
               </div>
             ));
@@ -362,7 +425,7 @@ const styles = {
     flexWrap: "wrap",
     gap: "24px",
     padding: "24px",
-    background: "#f1f5f9", // Slightly darker background to make cards pop
+    background: "#f1f5f9",
     minHeight: "100vh",
     alignItems: "flex-start",
   },

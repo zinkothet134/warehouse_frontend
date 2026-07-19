@@ -658,7 +658,7 @@ const styles = {
     border: "none",
     borderRadius: "10px",
     background: "#e2e8f0",
-    color: "#334155",
+    color: "#dae0e7",
     cursor: "pointer",
   },
   quantityInput: {
