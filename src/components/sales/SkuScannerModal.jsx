@@ -159,23 +159,36 @@ export default function SkuScannerModal({
       : scannedVariant?.retail_price,
   );
 
+  // Updated to allow clearing the input field safely
   const handleQuantityChange = (value) => {
-    const nextQuantity = Number(value);
-
-    if (!Number.isFinite(nextQuantity)) {
-      setQuantity(1);
+    if (value === "") {
+      setQuantity("");
       return;
     }
 
-    setQuantity(Math.min(Math.max(1, nextQuantity), maxStock));
+    const nextQuantity = parseInt(value, 10);
+
+    if (isNaN(nextQuantity)) return;
+
+    setQuantity(Math.min(nextQuantity, maxStock));
+  };
+
+  // Ensure it resets to 1 if the user leaves the input blank or at 0
+  const handleQuantityBlur = () => {
+    if (quantity === "" || quantity < 1) {
+      setQuantity(1);
+    }
   };
 
   const handleAddToCart = () => {
     if (!scannedVariant) return;
 
+    // Safety check just in case they click add while the input is cleared
+    const finalQuantity = quantity === "" || quantity < 1 ? 1 : quantity;
+
     onAddToCart({
       variant: scannedVariant,
-      quantity,
+      quantity: finalQuantity,
       saleMode,
     });
   };
@@ -331,7 +344,9 @@ export default function SkuScannerModal({
                 <button
                   type="button"
                   onClick={() =>
-                    setQuantity((current) => Math.max(1, current - 1))
+                    setQuantity((current) =>
+                      Math.max(1, (Number(current) || 0) - 1),
+                    )
                   }
                   style={styles.quantityButton}
                 >
@@ -339,18 +354,19 @@ export default function SkuScannerModal({
                 </button>
 
                 <input
-                  type="number"
-                  min="1"
-                  max={maxStock}
+                  type="text"
                   value={quantity}
                   onChange={(event) => handleQuantityChange(event.target.value)}
+                  onBlur={handleQuantityBlur}
                   style={styles.quantityInput}
                 />
 
                 <button
                   type="button"
                   onClick={() =>
-                    setQuantity((current) => Math.min(maxStock, current + 1))
+                    setQuantity((current) =>
+                      Math.min(maxStock, (Number(current) || 0) + 1),
+                    )
                   }
                   style={styles.quantityButton}
                 >
@@ -361,7 +377,9 @@ export default function SkuScannerModal({
 
             <div style={styles.totalBox}>
               <span>Item total</span>
-              <strong>${(quantity * selectedPrice).toFixed(2)}</strong>
+              <strong>
+                ${((Number(quantity) || 0) * selectedPrice).toFixed(2)}
+              </strong>
             </div>
 
             <button
@@ -649,7 +667,7 @@ const styles = {
     boxSizing: "border-box",
     border: "1px solid #cbd5e1",
     borderRadius: "10px",
-    color: "#f2f5f3",
+    color: "#0f172a", // Fixed the color to ensure it's visible on a light background
     fontWeight: "800",
     textAlign: "center",
   },
